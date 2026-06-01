@@ -1,0 +1,10 @@
+.env
+data/*.db
+config/config.php
+config/smtp.php
+config/secrets.php
+backups/
+.DS_Store
+*.swp
+*.swo
+.vscode/

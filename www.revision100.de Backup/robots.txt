@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Explizite Freigabe für gängige KI-Crawler (OpenAI, Perplexity, Anthropic)
+User-agent: GPTBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+
+# Pfad zur Sitemap
+Sitemap: https://revision100.de/sitemap.xml

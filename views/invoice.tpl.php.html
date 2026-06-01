@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+  <title>Rechnung: <?= htmlspecialchars($project['customer_name']) ?></title>
+  <style>
+    :root { --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Impact', sans-serif; }
+    html { overflow-y: scroll; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fff; margin: 0; padding: 0; color: #000; }
+    
+    header, .crm-layout, .container {
+      max-width: 600px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+
+    header { padding: 45px 16px 35px 16px; border-bottom: 1px solid #000; margin-bottom: 40px; display: block; }
+    .brand { display: flex; align-items: center; gap: 16px; margin: 0; padding: 0; }
+    .brand-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1.0; color: #000; margin: 0; padding: 0; display: inline-block; }
+    
+    .status-led { width: 12px; height: 12px; display: inline-block; background-color: #2ecc71; border: 1px solid #000; }
+    .header-claim { font-family: monospace; font-size: 11px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+    
+    .vision-control-bar { display: flex; gap: 4px; margin-top: 12px; height: 12px; }
+    .status-square { width: 22px; height: 22px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #fff; }
+    
+    .container { background: #fff; padding: 0; }
+    .content { padding: 16px 20px; margin: 0; display: flex; flex-direction: column; gap: 24px; }
+    
+    .section-title { font-weight: bold; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 8px; }
+    
+    .form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
+    .form-input { padding: 10px; border: 1px solid #000; font-family: var(--font-mono); font-size: 13px; box-sizing: border-box; width: 100%; }
+    
+    .invoice-preview-panel { border: 1px solid #000; padding: 20px; background: #fafafa; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+    .invoice-header { display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
+    
+    .btn { background: #000; color: #fff; border: 1px solid #000; padding: 10px 16px; font-family: var(--font-mono); font-weight: bold; text-transform: uppercase; cursor: pointer; min-height: 40px; }
+    .btn:hover { background: #333; }
+    
+    .toggle-row { display: flex; gap: 16px; margin-bottom: 12px; }
+    .toggle-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .toggle-item input { cursor: pointer; }
+
+    @media (max-width: 768px) {
+      header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
+      .brand-name { font-size: 24px; }
+      .header-claim { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="brand-name">Revision100™</span><span id="statusLed" class="status-led"></span></div>
+  <div class="header-claim">Interne Werkbank // System-Zentrale // Control: <?= $activeControl ?></div>
+  <div id="statusSquares" class="vision-control-bar"></div>
+</header>
+
+<div class="crm-layout">
+  <?php include __DIR__ . '/nav.tpl.php'; ?>
+</div>
+
+<div class="container">
+  <div class="content">
+    
+    <div>
+      <div class="section-title">Projektwert & Stammdaten</div>
+      <form method="POST" action="invoice.php?id=<?= $currentProjectId ?>">
+        <input type="hidden" name="action" value="save_project_value">
+        <div class="form-group">
+          <label class="form-label">Projektwert (Brutto/Netto je nach Regelung)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" name="project_value" id="projectValueInput" class="form-input" style="text-align: right;" value="<?= number_format((float)($project['budget'] ?? 0), 2, ',', '') ?>" placeholder="0,00">
+            <button type="submit" class="btn">Wert Sichern</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="form-group" style="margin-top: 16px;">
+        <label class="form-label">Rechnungsempfänger / Ansprechpartner</label>
+        <select id="contactSelect" class="form-input" onchange="updateInvoicePreview()">
+          <option value="default"><?= htmlspecialchars($project['customer_name']) ?> (Hauptadresse)</option>
+          <?php foreach ($contacts as $c): ?>
+            <option value="<?= $c['id'] ?>" data-name="<?= htmlspecialchars($c['name']) ?>" data-email="<?= htmlspecialchars($c['email']) ?>">
+              <?= htmlspecialchars($c['name']) ?> <?= $c['role'] ? '('.htmlspecialchars($c['role']).')' : '' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Rechnungs-Konfiguration</div>
+      <div class="toggle-row">
+        <div class="toggle-item">
+          <input type="checkbox" id="chkUstg" onchange="updateInvoicePreview()">
+          <label for="chkUstg">§ 19 UStG (Kleinunternehmer)</label>
+        </div>
+        <div class="toggle-item">
+          <input type="checkbox" id="chkVorkasse" checked onchange="updateInvoicePreview()">
+          <label for="chkVorkasse">Zahlungsart: Vorkasse</label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Rechnungs-Vorschau</div>
+      <div class="invoice-preview-panel" id="invoicePreview">
+        </div>
+      <button type="button" class="btn" style="width: 100%; margin-top: 16px;" onclick="generateAndSendInvoice()">PDF Generieren & Rechnungsversand starten</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const projectData = {
+  id: <?= $currentProjectId ?>,
+  firma: '<?= htmlspecialchars(addslashes($project['customer_name'])) ?>',
+  adresse: '<?= htmlspecialchars(addslashes($project['address'] ?? '')) ?>',
+  plzOrt: '<?= htmlspecialchars(addslashes(($project['postal_code'] ?? '') . ' ' . ($project['city'] ?? ''))) ?>',
+  baseValue: <?= (float)($project['budget'] ?? 0) ?>,
+  rechnungsNr: 'INV-' + new Date().getFullYear() + '-' + String(projectData?.id || <?= $currentProjectId ?>).padStart(4, '0')
+};
+
+function updateInvoicePreview() {
+  const isKleinunternehmer = document.getElementById('chkUstg').checked;
+  const isVorkasse = document.getElementById('chkVorkasse').checked;
+  const contactSelect = document.getElementById('contactSelect');
+  
+  let valueStr = document.getElementById('projectValueInput').value.replace(',', '.');
+  let currentVal = parseFloat(valueStr) || 0;
+  
+  let recipientName = projectData.firma;
+  if (contactSelect.value !== 'default') {
+    const selectedOption = contactSelect.options[contactSelect.selectedIndex];
+    recipientName = projectData.firma + '\nz.Hd. ' + selectedOption.getAttribute('data-name');
+  }
+
+  let calculationsHtml = '';
+  if (isKleinunternehmer) {
+    calculationsHtml = `
+Zwischensumme:          ${currentVal.toFixed(2)} €
+Umsatzsteuer (0%):       0,00 €
+---------------------------------
+Gesamtbetrag:           ${currentVal.toFixed(2)} €
+
+Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.`;
+  } else {
+    let net = currentVal / 1.19;
+    let mwst = currentVal - net;
+    calculationsHtml = `
+Zwischensumme (Netto):  ${net.toFixed(2)} €
+Umsatzsteuer (19%):     ${mwst.toFixed(2)} €
+---------------------------------
+Gesamtbetrag (Brutto):  ${currentVal.toFixed(2)} €`;
+  }
+
+  let paymentText = isVorkasse 
+    ? 'Zahlungsart: Vorkasse\nBitte überweisen Sie den Betrag vor Beginn der Umsetzung auf das angegebene Geschäftskonto.' 
+    : 'Zahlungsziel: 14 Tage netto nach Erhalt der Rechnung ohne Abzug.';
+
+  document.getElementById('invoicePreview').innerHTML = `
+<strong>RECHNUNG</strong>
+Nr: ${projectData.rechnungsNr}
+Datum: ${new Date().toLocaleDateString('de-DE')}
+
+<strong>Empfänger:</strong>
+${recipientName}
+${projectData.adresse}
+${projectData.plzOrt}
+
+-------------------------------------------------
+Position: Revision100™ Code-Leistungsrevison 1,00x
+-------------------------------------------------
+${calculationsHtml}
+
+${paymentText}
+  `.trim().replace(/\n/g, '<br>');
+}
+
+async function generateAndSendInvoice() {
+  const isKleinunternehmer = document.getElementById('chkUstg').checked;
+  const isVorkasse = document.getElementById('chkVorkasse').checked;
+  const contactSelect = document.getElementById('contactSelect');
+  
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Verarbeite...';
+
+  try {
+    const response = await fetch('api.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'generate_invoice_email',
+        project_id: projectData.id,
+        is_ustg: isKleinunternehmer,
+        is_vorkasse: isVorkasse,
+        contact_id: contactSelect.value,
+        rechnungs_nr: projectData.rechnungsNr
+      })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      alert('✓ PDF generiert und Rechnung per E-Mail versendet.');
+    } else {
+      alert('Fehler: ' + result.error);
+    }
+  } catch (e) {
+    alert('Fehler bei der Übertragung: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'PDF Generieren & Rechnungsversand starten';
+  }
+}
+
+// VisionControl
+const phaseIndex = {anfrage:0, analyse:1, kontakt:2, beauftragung:3, umsetzung:4, abgeschlossen:5};
+const colorPalettes = {
+  green: ['#a3e4d7', '#7ed4c1', '#5cc4ab', '#3bb495', '#1fa47f', '#0d8659'],
+  orange: ['#FFE4B5', '#FFD699', '#FFC87D', '#FFBA61', '#FFAB45', '#FF9529'],
+  red: ['#FFB3B3', '#FF9999', '#FF7F7F', '#FF6565', '#FF4B4B', '#FF3131'],
+  gray: ['#D3D3D3', '#BEBEBE', '#A9A9A9', '#949494', '#7F7F7F', '#696969']
+};
+
+function getAgeStatus(lastInteractionDate) {
+  if (!lastInteractionDate) return 'green';
+  const last = new Date(lastInteractionDate);
+  const now = new Date();
+  const days = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+  if (days >= 13) return 'gray';
+  if (days >= 12) return 'red';
+  if (days >= 7) return 'orange';
+  return 'green';
+}
+
+function renderPhaseSquares() {
+  const tunnel = '<?= htmlspecialchars($project['tunnel']) ?>';
+  const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
+  const phaseIdx = phaseIndex[tunnel] || 0;
+  const status = getAgeStatus(lastInteractionDate);
+  const colors = colorPalettes[status];
+  const container = document.getElementById('statusSquares');
+  container.innerHTML = '';
+
+  for (let i = 0; i < 6; i++) {
+    const square = document.createElement('div');
+    square.className = 'status-square';
+    square.style.background = i <= phaseIdx ? colors[i] : '#eee';
+    square.style.color = i <= phaseIdx ? '#fff' : '#ccc';
+    square.textContent = String(i + 1);
+    container.appendChild(square);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderPhaseSquares();
+  updateInvoicePreview();
+  
+  document.getElementById('projectValueInput').addEventListener('input', updateInvoicePreview);
+});
+</script>
+</body>
+</html>
