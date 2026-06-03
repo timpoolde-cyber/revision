@@ -20,4 +20,4 @@ jobs:
           server: ${{ secrets.SFTP_SERVER }}
           port: 22
           local_path: ./
-          remote_path: webroots/62bd938a/
+          remote_path: sandbox/
