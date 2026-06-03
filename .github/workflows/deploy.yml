@@ -23,4 +23,5 @@ jobs:
           server: ${{ secrets.SFTP_SERVER }}
           port: 22
           local_dir: ./
-          remote_dir: /webroots/62bd938a/
+          # Relativer Pfad: Wir starten im Hauptverzeichnis und gehen in den Sandbox-Ordner
+          remote_dir: webroots/62bd938a/
