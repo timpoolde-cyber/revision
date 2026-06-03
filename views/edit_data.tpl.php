@@ -459,7 +459,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- Lädt die neue Extended Component Library direkt über das offizielle Loader-Modul -->
 <script type="module">
   import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
-  APILoader.apiKey = '<?= getenv("GOOGLE_MAPS_KEY") ?>';
+  APILoader.apiKey = '<?= $googleMapsKey ?>';
 </script>
 
 <script>
