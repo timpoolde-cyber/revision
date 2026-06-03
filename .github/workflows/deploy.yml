@@ -12,12 +12,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install SSHPass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Ultra Fast Native Sync via rsync
+      - name: Ultra Fast Mirror via lftp
         run: |
-          sshpass -p "${{ secrets.SFTP_PASSWORD }}" rsync -avz -e "ssh -p 22 -o StrictHostKeyChecking=no" \
-            --exclude='.git*' \
-            --exclude='.github*' \
-            ./ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/webroots/62bd938a
+          lftp -c "
+          set sftp:connect-program 'ssh -a -x -o StrictHostKeyChecking=no';
+          open -u ${{ secrets.SFTP_USERNAME }},${{ secrets.SFTP_PASSWORD }} -p 22 sftp://${{ secrets.SFTP_SERVER }};
+          mirror -Rx '^\.git/' -Rx '^\.github/' ./ /webroots/62bd938a;
+          "
