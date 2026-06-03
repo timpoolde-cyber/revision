@@ -462,8 +462,16 @@ window.addEventListener('DOMContentLoaded', () => {
   APILoader.apiKey = '<?= $googleMapsKey ?>';
 </script>
 
-<script>
-  document.addEventListener('DOMContentLoaded', initAutocomplete);
+<script type="module">
+  import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
+  APILoader.apiKey = '<?= $googleMapsKey ?>';
+  
+  // Triggert die Initialisierung exakt dann, wenn das Modul geladen ist
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initAutocomplete());
+  } else {
+    initAutocomplete();
+  }
 </script>
 </body>
 </html>
