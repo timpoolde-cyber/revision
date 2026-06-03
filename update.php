@@ -76,13 +76,19 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
   <title>Revision100™</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root { --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Impact', sans-serif; --color-primary: #1FA47F; --color-dark: #000; --color-light: #fff; }
+    :root { 
+      --font-mono: 'JetBrains Mono', monospace; 
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      --color-primary: #1FA47F; 
+      --color-dark: #000; 
+      --color-light: #fff; 
+    }
     * { box-sizing: border-box; }
 
     body {
       background: #fff !important;
       background-image: none !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      font-family: var(--font-sans) !important;
     }
     .wrapper {
       max-width: 600px;
@@ -121,14 +127,6 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
         display: inline-block !important;
     }
 
-    .status-led {
-        width: 12px !important;
-        height: 12px !important;
-        display: inline-block !important;
-        border: 1px solid #000 !important;
-        background-color: #2ecc71 !important;
-    }
-
     .header-claim {
         font-family: monospace !important;
         font-size: 11px !important;
@@ -162,10 +160,11 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       background: #f9f9f9;
     }
     .score {
-      font-family: var(--font-sans);
+      font-family: var(--font-mono);
       font-size: 48px;
       line-height: 1;
       margin: 12px 0;
+      font-weight: bold;
       <?php if($score >= 90) echo 'color: var(--color-primary);'; ?>
     }
     .score-label {
@@ -187,61 +186,54 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       margin-top: 8px;
       letter-spacing: 0.5px;
     }
-    .climate-impact {
-      background: #f0fdf8;
-      border-left: 4px solid var(--color-primary);
-      padding: 16px;
-      margin: 20px 0 28px 0;
-      font-size: 13px;
-      line-height: 1.7;
-      color: #1a5f47;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 32px 20px;
-      background: #f5f5f5;
-      border: 2px solid #e0e0e0;
-      color: #999;
-    }
-    .empty-state-label {
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      color: #999;
-    }
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
     label {
       display: block;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      color: #333;
+      color: #666;
     }
     input {
       width: 100%;
-      padding: 14px;
-      border: 1px solid #ddd;
+      padding: 10px;
+      border: 1px solid #000;
       font-family: var(--font-mono);
-      font-size: 16px;
+      font-size: 13px;
       background: var(--color-light);
     }
     input:focus {
       outline: none;
-      border-color: var(--color-primary);
       background: #fafafa;
     }
-    
-    /* Styling für das neue Google Web Component Element */
-    gmpx-place-autocomplete { width: 100%; display: block; }
-    gmpx-place-autocomplete input { width: 100%; padding: 14px; border: 1px solid #ddd; font-family: var(--font-mono); font-size: 16px; background: var(--color-light); }
-    gmpx-place-autocomplete input:focus { border-color: var(--color-primary); background: #fafafa; }
 
+    /* CSS Styling für das klassische Google Autocomplete Dropdown */
+    .pac-container {
+      border: 1px solid #000 !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+      font-family: var(--font-sans) !important;
+      z-index: 99999 !important;
+    }
+    .pac-item {
+      padding: 10px !important;
+      font-size: 13px !important;
+      cursor: pointer;
+    }
+    .pac-item:hover {
+      background-color: #f5f5f5 !important;
+    }
+    
     .btn {
       background: var(--color-dark);
       color: var(--color-light);
@@ -285,7 +277,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
     .status-dot.unsaved { background: #ef4444; }
     
     .section-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -302,19 +294,13 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       gap: 12px;
       margin-bottom: 16px;
       align-items: end;
+      border: 1px solid #000;
+      padding: 14px;
+      background: #fafafa;
     }
     .contact-row > div {
       display: flex;
       flex-direction: column;
-    }
-    .contact-row label {
-      margin-bottom: 6px;
-    }
-    .contact-row input {
-      padding: 10px;
-      border: 1px solid #ddd;
-      font-family: var(--font-mono);
-      font-size: 14px;
     }
     .btn-delete {
       background: #ef4444;
@@ -325,7 +311,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       font-size: 12px;
       font-weight: bold;
       cursor: pointer;
-      height: 42px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -333,7 +319,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
     #addContactBtn {
       background: transparent;
       color: var(--color-dark);
-      border: 1px dashed #999;
+      border: 1px dashed #000;
       padding: 12px 16px;
       font-family: var(--font-mono);
       font-size: 12px;
@@ -345,12 +331,12 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       letter-spacing: 0.5px;
     }
     @media (max-width: 640px) {
-      .contact-row { grid-template-columns: 1fr; }
+      .contact-row { grid-template-columns: 1fr; gap: 8px; }
     }
     @media (min-width: 640px) {
       body { padding: 40px 20px; }
       .wrapper { padding: 40px; }
-      h1 { font-size: 32px; }
+      h1 { font-size: 24px; }
       .score { font-size: 64px; }
     }
     @media (max-width: 768px) {
@@ -363,7 +349,6 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
 
 <header>
   <div class="brand"><span class="brand-name">Revision100™</span></div>
-  <div id="statusSquares" style="display: flex; gap: 4px; margin-top: 12px; height: 12px;"></div>
   <div class="header-claim">Kundenportal // Stammdaten-Aktualisierung</div>
 </header>
 
@@ -404,30 +389,34 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
   <form action="api_client_update.php" method="POST" id="updateForm">
     <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
 
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" id="nameInput" name="name" value="<?= htmlspecialchars($data['customer_name'] ?? '') ?>" placeholder="Vorname Nachname" autocomplete="name">
+    <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
+      <label style="color: #000;">⚡ Google Blitz-Suche (Findet Ihre Firma automatisch)</label>
+      <input type="text" id="googleSearchField" placeholder="Unternehmensnamen tippen..." autocomplete="off" style="font-size: 14px; padding: 10px;">
     </div>
 
     <div class="form-group">
-      <label>Mobil</label>
-      <input type="tel" id="phoneInput" name="phone_mobile" value="<?= htmlspecialchars($data['phone_mobile'] ?? '') ?>" placeholder="+49 123 456789" autocomplete="tel">
+      <label>Firma / Kundenname</label>
+      <input type="text" id="customerName" name="customer_name" value="<?= htmlspecialchars($data['customer_name'] ?? '') ?>" placeholder="Firmenname">
     </div>
 
     <div class="form-group">
-      <label>Mail</label>
-      <input type="email" id="emailInput" name="email" value="<?= htmlspecialchars($data['email'] ?? '') ?>" placeholder="name@example.com" autocomplete="email">
+      <label>Straße & Hausnummer</label>
+      <input type="text" id="address" name="address" value="<?= htmlspecialchars($data['address'] ?? '') ?>" placeholder="Straße und Hausnummer">
     </div>
 
-    <div class="form-group">
-      <label>Unternehmensstandort (Auto-Complete)</label>
-      <gmpx-place-autocomplete>
-        <input type="text" id="addressInput" name="address" value="<?= htmlspecialchars($data['address']) ?>" placeholder="Straße eingeben...">
-      </gmpx-place-autocomplete>
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label>Stadt</label>
+        <input type="text" id="city" name="city" value="<?= htmlspecialchars($data['city'] ?? '') ?>" placeholder="Stadt">
+      </div>
+      <div class="form-group">
+        <label>PLZ</label>
+        <input type="text" id="postalCode" name="postal_code" value="<?= htmlspecialchars($data['postal_code'] ?? '') ?>" placeholder="Postleitzahl">
+      </div>
     </div>
 
-    <input type="hidden" id="lat" name="latitude" value="<?= htmlspecialchars($data['latitude']) ?>">
-    <input type="hidden" id="lng" name="longitude" value="<?= htmlspecialchars($data['longitude']) ?>">
+    <input type="hidden" id="lat" name="latitude" value="<?= htmlspecialchars($data['latitude'] ?? '') ?>">
+    <input type="hidden" id="lng" name="longitude" value="<?= htmlspecialchars($data['longitude'] ?? '') ?>">
 
     <h3 class="section-title">Personen / Ansprechpartner im Projekt</h3>
 
@@ -466,57 +455,47 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
 </div>
 
 <script>
-  function formatPhoneNumber(input) {
-    let value = input.value.trim();
-    if (!value) return;
-
-    if (value.startsWith('+49 ') && value.includes(' ', 5)) {
-      return;
-    }
-
-    value = value.replace(/\s*\(0\)\s*/g, ' ');
-    let cleaned = value.replace(/[^0-9]/g, '');
-
-    if (cleaned.startsWith('0049')) { cleaned = cleaned.substring(4); } 
-    else if (cleaned.startsWith('49')) { cleaned = cleaned.substring(2); } 
-    else if (cleaned.startsWith('0')) { cleaned = cleaned.substring(1); }
-
-    if (cleaned.length < 3) return;
-
-    const vorwahl = cleaned.substring(0, 4);
-    const rest = cleaned.substring(4);
-
-    if (!rest) {
-      const vorwahlShort = cleaned.substring(0, 3);
-      const restShort = cleaned.substring(3);
-      input.value = '+49 ' + vorwahlShort + ' ' + restShort;
-      return;
-    }
-
-    input.value = '+49 ' + vorwahl + ' ' + rest;
-  }
-
-  const phoneInput = document.getElementById('phoneInput');
-  phoneInput.addEventListener('blur', function(e) {
-    formatPhoneNumber(e.target);
-  });
-
-  // Moderner API 2025 Handler für die Web Component
+  // Klassischer Google Autocomplete Initialisierer
   function initAutocomplete() {
-    const autocompleteEl = document.querySelector('gmpx-place-autocomplete');
-    if (!autocompleteEl) return;
+    const input = document.getElementById('googleSearchField');
+    if (!input) return;
 
-    autocompleteEl.options = {
-      componentRestrictions: { country: 'de' }
-    };
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      types: ['establishment'],
+      componentRestrictions: { country: 'de' },
+      fields: ['address_components', 'name', 'geometry']
+    });
 
-    autocompleteEl.addEventListener('gmpx-placechange', () => {
-      const place = autocompleteEl.value;
-      if (!place || !place.geometry) return;
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (!place || !place.address_components) return;
 
-      document.getElementById('lat').value = place.geometry.location.lat();
-      document.getElementById('lng').value = place.geometry.location.lng();
+      let street = '', itemNumber = '', city = '', postalCode = '';
+
+      place.address_components.forEach(comp => {
+        const types = comp.types;
+        if (types.includes('route')) street = comp.long_name;
+        if (types.includes('street_number')) itemNumber = comp.long_name;
+        if (types.includes('locality')) city = comp.long_name;
+        if (types.includes('postal_code')) postalCode = comp.long_name;
+      });
+
+      // Zuweisung in die strukturierten Formularfelder
+      if (place.name) {
+        document.getElementById('customerName').value = place.name;
+      }
+      document.getElementById('address').value = street + (itemNumber ? ' ' + itemNumber : '');
+      document.getElementById('city').value = city;
+      document.getElementById('postalCode').value = postalCode;
+      
+      if (place.geometry && place.geometry.location) {
+        document.getElementById('lat').value = place.geometry.location.lat();
+        document.getElementById('lng').value = place.geometry.location.lng();
+      }
+
       setSaveStatus(false);
+      // Suchfeld leeren
+      setTimeout(() => { input.value = ''; }, 50);
     });
   }
 
@@ -568,7 +547,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
 
     row.innerHTML = `
       <div><label>Name</label><input type="text" name="new_contacts[${contactIndex}][name]" placeholder="Vorname Nachname"></div>
-      <div><label>Funktion / Rolle</label><input type="text" name="new_contacts[${contactIndex}][role]" placeholder="z.B. Technik"></div>
+      <div><label>Funktion / Rolle</label><input type="text" name="new_contacts[${contactIndex}][role]" placeholder="z.B. Geschäftsführer, Technik"></div>
       <div><label>E-Mail</label><input type="email" name="new_contacts[${contactIndex}][email]" placeholder="name@example.com"></div>
       <div><label>Telefon</label><input type="tel" name="new_contacts[${contactIndex}][phone]" placeholder="+49 123 456789"></div>
       <div><button type="button" class="btn-delete">X</button></div>
@@ -589,6 +568,6 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
   });
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=<?= $mapsKey ?>&libraries=places&loading=async&callback=initAutocomplete" defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=<?= $mapsKey ?>&libraries=places&callback=initAutocomplete" async defer></script>
 </body>
 </html>
