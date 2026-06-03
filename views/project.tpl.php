@@ -6,17 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projekt: <?= htmlspecialchars($project['customer_name']) ?></title>
   <style>
-    :root { --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Impact', sans-serif; }
-    html { overflow-y: scroll; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fff; margin: 0; padding: 0; color: #000; }
-    
-    /* Starre Desktop-Zentrierung bei 600px für alle Hauptblöcke */
-    header, .crm-layout, .container {
-      max-width: 600px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-      box-sizing: border-box;
+    root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    html {
+      scrollbar-gutter: stable;
     }
 
     header { padding: 45px 16px 35px 16px; border-bottom: 1px solid #000; margin-bottom: 40px; display: block; }

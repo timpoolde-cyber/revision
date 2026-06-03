@@ -6,8 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projektdaten: <?= htmlspecialchars($project['customer_name']) ?></title>
   <style>
-    :root { --font-mono: 'JetBrains Mono', monospace; --font-sans: 'Impact', sans-serif; }
-    html { overflow-y: scroll; }
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    html {
+      scrollbar-gutter: stable;
+    }
+
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fff; margin: 0; padding: 0; color: #000; }
     
     header, .crm-layout, .container {
@@ -71,10 +78,44 @@
     .contact-row input[type="radio"] { margin: 0; cursor: pointer; width: 16px; height: 16px; }
     .contact-row button { padding: 6px 10px; height: 34px; font-size: 11px; }
 
+    /* --- MOBILE UX OPTIMIERUNGEN FÜR GOOGLE AUTOCOMPLETE --- */
+    gmpx-place-autocomplete { 
+      width: 100%; 
+      display: block; 
+      position: relative;
+    }
+
+    /* Durchbricht das Shadow-DOM, um die Dropdown-Liste mobil benutzbar zu machen */
+    gmpx-place-autocomplete::part(list) {
+      border: 1px solid #000 !important;
+      border-top: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+      background: #fff !important;
+      font-family: var(--font-sans) !important;
+      max-height: 250px !important;
+    }
+
+    /* Vergrößert die Zeilenhöhe der Suchergebnisse für fehlerfreie Touch-Eingaben */
+    gmpx-place-autocomplete::part(list-item) {
+      padding: 12px 10px !important;
+      border-bottom: 1px solid #eee !important;
+      font-size: 13px !important;
+      line-height: 1.3 !important;
+    }
+
     @media (max-width: 768px) {
       header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
       .brand-name { font-size: 24px; }
       .header-claim { font-size: 10px; }
+      
+      /* Optimiert die Dropdown-Position auf kleinen Screens, damit nichts abgeschnitten wird */
+      gmpx-place-autocomplete::part(list) {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: auto !important;
+        z-index: 99999 !important;
+      }
     }
   </style>
 </head>
@@ -94,21 +135,30 @@
     
     <div>
       <div class="section-title">Projektdaten</div>
+      
+      <!-- 1. DAS TEMPORÄRE SUCHFELD: Deklarativ konfiguriert und optisch hervorgehoben -->
+      <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
+        <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
+          <span>⚡</span> Google Firmensuche (Ausfüllhilfe)
+        </label>
+        <gmpx-place-autocomplete types="establishment" restrictions='{"country": "de"}'>
+          <input type="text" id="googleSearchField" class="form-input" placeholder="Unternehmen tippen für Auto-Fill..." autocomplete="off" style="background: #fff; font-size: 14px; padding: 10px;">
+        </gmpx-place-autocomplete>
+      </div>
+
+      <!-- 2. DIE ECHTEN FORMULARFELDER: Das Rückgrat für deine Datenbank -->
       <div class="form-group">
-        <label class="form-label">Firma</label>
+        <label class="form-label">Firma / Kundenname</label>
         <input type="text" id="customerName" class="form-input" value="<?= htmlspecialchars($project['customer_name'] ?? '') ?>">
       </div>
       <div class="form-group">
         <label class="form-label">URL</label>
         <input type="text" id="targetUrl" class="form-input" value="<?= htmlspecialchars($project['target_url'] ?? '') ?>">
       </div>
-  <div class="form-group">
-  <label class="form-label">Unternehmensstandort (Auto-Complete)</label>
-  <!-- Die neue HTML-Komponente umschließt dein Input-Feld -->
-  <gmpx-place-autocomplete>
-    <input type="text" id="address" class="form-input" placeholder="Straße eingeben..." value="<?= htmlspecialchars($project['address'] ?? '') ?>">
-  </gmpx-place-autocomplete>
-</div>
+      <div class="form-group">
+        <label class="form-label">Straße & Hausnummer</label>
+        <input type="text" id="address" class="form-input" placeholder="Straße" value="<?= htmlspecialchars($project['address'] ?? '') ?>">
+      </div>
       <input type="hidden" id="lat" value="">
       <input type="hidden" id="lng" value="">
       <div class="form-row-2col">
@@ -213,6 +263,7 @@ function renderPhaseSquares() {
   const status = getAgeStatus(lastInteractionDate);
   const colors = colorPalettes[status];
   const container = document.getElementById('statusSquares');
+  if (!container) return;
   container.innerHTML = '';
 
   for (let i = 0; i < 6; i++) {
@@ -310,37 +361,46 @@ function showNotification(message, success = true) {
   setTimeout(() => notif.remove(), 2000);
 }
 
-// Moderner Handler für das neue HTML-Element ab 2025
 function initAutocomplete() {
   const autocompleteEl = document.querySelector('gmpx-place-autocomplete');
   if (!autocompleteEl) return;
 
-  // Beschränkung der Vorschläge auf Deutschland
-  autocompleteEl.options = {
-    componentRestrictions: { country: 'de' }
-  };
+  // Reines Event-Listening ohne volatile DOM-Eigenschaftsmanipulationen
+  autocompleteEl.addEventListener('gmp-placeselect', async (e) => {
+    const place = e.place;
+    if (!place) return;
 
-  // Horcht auf das neue Google-Event 'gmpx-placechange'
-  autocompleteEl.addEventListener('gmpx-placechange', () => {
-    const place = autocompleteEl.value;
-    if (!place || !place.addressComponents) return;
+    await place.fetchFields({ fields: ['addressComponents', 'displayName', 'location'] });
 
-    let city = '', postalCode = '', route = '', streetNumber = '';
+    let street = '', itemNumber = '', city = '', postalCode = '';
 
-    // Extrahiert die Adressdaten aus der neuen Google-Struktur
-    place.addressComponents.forEach(comp => {
-      if (comp.types.includes('postal_code')) postalCode = comp.longText;
-      if (comp.types.includes('locality')) city = comp.longText;
-      if (comp.types.includes('route')) route = comp.longText;
-      if (comp.types.includes('street_number')) streetNumber = comp.longText;
-    });
-
-    if (route) {
-      const street = route + (streetNumber ? ' ' + streetNumber : '');
-      document.getElementById('address').value = street;
+    if (place.addressComponents) {
+      place.addressComponents.forEach(comp => {
+        const types = comp.types;
+        if (types.includes('route')) street = comp.longText;
+        if (types.includes('street_number')) itemNumber = comp.longText;
+        if (types.includes('locality')) city = comp.longText;
+        if (types.includes('postal_code')) postalCode = comp.longText;
+      });
     }
-    if (city) document.getElementById('city').value = city;
-    if (postalCode) document.getElementById('postalCode').value = postalCode;
+
+    // Werte sauber in die datenbankgestützten Felder kopieren
+    if (place.displayName) {
+      document.getElementById('customerName').value = place.displayName;
+    }
+    document.getElementById('address').value = street + (itemNumber ? ' ' + itemNumber : '');
+    document.getElementById('city').value = city;
+    document.getElementById('postalCode').value = postalCode;
+    
+    if (place.location) {
+      document.getElementById('lat').value = place.location.lat();
+      document.getElementById('lng').value = place.location.lng();
+    }
+
+    // Leert das Suchfeld im DOM verzögert, um mobile Tastatur-Glitches zu verhindern
+    setTimeout(() => {
+      document.getElementById('googleSearchField').value = '';
+    }, 50);
   });
 }
 
@@ -396,13 +456,14 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- Lädt die erweiterten Web Components mitsamt Places-Bibliothek asynchron -->
-<script src="https://maps.googleapis.com/maps/api/js?key=<?= getenv('GOOGLE_MAPS_KEY') ?>&libraries=places&loading=async" defer></script>
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/javascript-extended-component-library/1.0.1/index.min.js"></script>
+<!-- Lädt die neue Extended Component Library direkt über das offizielle Loader-Modul -->
+<script type="module">
+  import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
+  APILoader.apiKey = '<?= getenv("GOOGLE_MAPS_KEY") ?>';
+</script>
 
 <script>
   document.addEventListener('DOMContentLoaded', initAutocomplete);
-  window.addEventListener('load', initAutocomplete);
 </script>
 </body>
 </html>

@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="style-crm.css">
   <link rel="stylesheet" href="print.css">
   <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    html {
+      scrollbar-gutter: stable;
+    }
     /* Globale Reset- und Strukturkorrekturen ohne !important im Hauptlayout */
     body { 
       background: #fff; 
