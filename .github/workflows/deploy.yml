@@ -12,12 +12,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Fast Native SFTP Deploy
-        uses: Nandisha/sftp-deploy@v1.3.0
-        with:
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          server: ${{ secrets.SFTP_SERVER }}
-          port: 22
-          local_path: ./
-          remote_path: /webroots/62bd938a
+      - name: Install SSHPass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Ultra Fast Native Sync via rsync
+        run: |
+          sshpass -p "${{ secrets.SFTP_PASSWORD }}" rsync -avz -e "ssh -p 22 -o StrictHostKeyChecking=no" \
+            --exclude='.git*' \
+            --exclude='.github*' \
+            ./ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/webroots/62bd938a
