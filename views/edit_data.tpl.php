@@ -136,15 +136,14 @@
     <div>
       <div class="section-title">Projektdaten</div>
       
-      <!-- 1. DAS TEMPORÄRE SUCHFELD: Deklarativ konfiguriert und optisch hervorgehoben -->
-      <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
-        <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
-          <span>⚡</span> Google Firmensuche (Ausfüllhilfe)
-        </label>
-        <gmpx-place-autocomplete types="establishment" restrictions='{"country": "de"}'>
-          <input type="text" id="googleSearchField" class="form-input" placeholder="Unternehmen tippen für Auto-Fill..." autocomplete="off" style="background: #fff; font-size: 14px; padding: 10px;">
-        </gmpx-place-autocomplete>
-      </div>
+<div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
+  <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
+    <span id="searchStatusLed">⚪</span> Google Firmensuche <span id="searchStatusText">(Bitte warten...)</span>
+  </label>
+  <gmpx-place-autocomplete types="establishment" restrictions='{"country": "de"}'>
+    <input type="text" id="googleSearchField" class="form-input" placeholder="Warte auf Google-Handshake..." autocomplete="off" disabled style="background: #eee; font-size: 14px; padding: 10px; cursor: not-allowed;">
+  </gmpx-place-autocomplete>
+</div>
 
       <!-- 2. DIE ECHTEN FORMULARFELDER: Das Rückgrat für deine Datenbank -->
       <div class="form-group">
@@ -456,22 +455,36 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- Lädt die neue Extended Component Library direkt über das offizielle Loader-Modul -->
 <script type="module">
   import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
-  APILoader.apiKey = '<?= $googleMapsKey ?>';
-</script>
-
-<script type="module">
-  import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
-  APILoader.apiKey = '<?= $googleMapsKey ?>';
   
-  // Triggert die Initialisierung exakt dann, wenn das Modul geladen ist
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initAutocomplete());
-  } else {
+  // Schlüssel übergeben
+  APILoader.apiKey = '<?= $googleMapsKey ?>';
+
+  // Warten, bis die Custom Elements im Browser registriert sind (Der Handshake)
+  customElements.whenDefined('gmpx-place-autocomplete').then(() => {
+    
+    // Autocomplete-Logik initialisieren
     initAutocomplete();
-  }
+
+    // UI-Elemente auf "Bereit" umstellen
+    const inputField = document.getElementById('googleSearchField');
+    const statusLed = document.getElementById('searchStatusLed');
+    const statusText = document.getElementById('searchStatusText');
+
+    if (inputField) {
+      inputField.disabled = false;
+      inputField.style.background = '#fff';
+      inputField.style.cursor = 'text';
+      inputField.placeholder = 'Unternehmen tippen für Auto-Fill...';
+    }
+    if (statusLed) statusLed.textContent = '⚡';
+    if (statusText) statusText.textContent = '(Bereit)';
+  }).catch(err => {
+    console.error("Google Handshake fehlgeschlagen:", err);
+    const statusText = document.getElementById('searchStatusText');
+    if (statusText) statusText.textContent = '(Fehler beim Laden)';
+  });
 </script>
 </body>
 </html>
