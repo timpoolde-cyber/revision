@@ -1,4 +1,3 @@
-<!-- /Users/timpoolair/revision100/views/edit_data.tpl.php -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -32,7 +31,6 @@
     .status-led { width: 12px; height: 12px; display: inline-block; background-color: #2ecc71; border: 1px solid #000; }
     .header-claim { font-family: monospace; font-size: 11px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
     
-    /* VisionControl Balken */
     .vision-control-bar { display: flex; gap: 4px; margin-top: 12px; height: 12px; }
     .status-square { width: 22px; height: 22px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #fff; }
     
@@ -78,44 +76,26 @@
     .contact-row input[type="radio"] { margin: 0; cursor: pointer; width: 16px; height: 16px; }
     .contact-row button { padding: 6px 10px; height: 34px; font-size: 11px; }
 
-    /* --- MOBILE UX OPTIMIERUNGEN FÜR GOOGLE AUTOCOMPLETE --- */
-    gmpx-place-autocomplete { 
-      width: 100%; 
-      display: block; 
-      position: relative;
-    }
-
-    /* Durchbricht das Shadow-DOM, um die Dropdown-Liste mobil benutzbar zu machen */
-    gmpx-place-autocomplete::part(list) {
+    /* CSS Styling für das klassische Google Autocomplete Dropdown */
+    .pac-container {
       border: 1px solid #000 !important;
-      border-top: none !important;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-      background: #fff !important;
       font-family: var(--font-sans) !important;
-      max-height: 250px !important;
+      z-index: 99999 !important;
     }
-
-    /* Vergrößert die Zeilenhöhe der Suchergebnisse für fehlerfreie Touch-Eingaben */
-    gmpx-place-autocomplete::part(list-item) {
-      padding: 12px 10px !important;
-      border-bottom: 1px solid #eee !important;
+    .pac-item {
+      padding: 10px !important;
       font-size: 13px !important;
-      line-height: 1.3 !important;
+      cursor: pointer;
+    }
+    .pac-item:hover {
+      background-color: #f5f5f5 !important;
     }
 
     @media (max-width: 768px) {
       header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
       .brand-name { font-size: 24px; }
       .header-claim { font-size: 10px; }
-      
-      /* Optimiert die Dropdown-Position auf kleinen Screens, damit nichts abgeschnitten wird */
-      gmpx-place-autocomplete::part(list) {
-        position: absolute !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: auto !important;
-        z-index: 99999 !important;
-      }
     }
   </style>
 </head>
@@ -136,16 +116,13 @@
     <div>
       <div class="section-title">Projektdaten</div>
       
-<div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
-  <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
-    <span id="searchStatusLed">⚪</span> Google Firmensuche <span id="searchStatusText">(Bitte warten...)</span>
-  </label>
-  <gmpx-place-autocomplete types="establishment" restrictions='{"country": "de"}'>
-    <input type="text" id="googleSearchField" class="form-input" placeholder="Warte auf Google-Handshake..." autocomplete="off" disabled style="background: #eee; font-size: 14px; padding: 10px; cursor: not-allowed;">
-  </gmpx-place-autocomplete>
-</div>
+      <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
+        <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
+          ⚡ Google Firmensuche (Ausfüllhilfe)
+        </label>
+        <input type="text" id="googleSearchField" class="form-input" placeholder="Unternehmen tippen für Auto-Fill..." autocomplete="off" style="background: #fff; font-size: 14px; padding: 10px;">
+      </div>
 
-      <!-- 2. DIE ECHTEN FORMULARFELDER: Das Rückgrat für deine Datenbank -->
       <div class="form-group">
         <label class="form-label">Firma / Kundenname</label>
         <input type="text" id="customerName" class="form-input" value="<?= htmlspecialchars($project['customer_name'] ?? '') ?>">
@@ -360,46 +337,44 @@ function showNotification(message, success = true) {
   setTimeout(() => notif.remove(), 2000);
 }
 
+// Klassischer Google Autocomplete Initialisierer
 function initAutocomplete() {
-  const autocompleteEl = document.querySelector('gmpx-place-autocomplete');
-  if (!autocompleteEl) return;
+  const input = document.getElementById('googleSearchField');
+  if (!input) return;
 
-  // Reines Event-Listening ohne volatile DOM-Eigenschaftsmanipulationen
-  autocompleteEl.addEventListener('gmp-placeselect', async (e) => {
-    const place = e.place;
-    if (!place) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ['establishment'],
+    componentRestrictions: { country: 'de' },
+    fields: ['address_components', 'name', 'geometry']
+  });
 
-    await place.fetchFields({ fields: ['addressComponents', 'displayName', 'location'] });
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place || !place.address_components) return;
 
     let street = '', itemNumber = '', city = '', postalCode = '';
 
-    if (place.addressComponents) {
-      place.addressComponents.forEach(comp => {
-        const types = comp.types;
-        if (types.includes('route')) street = comp.longText;
-        if (types.includes('street_number')) itemNumber = comp.longText;
-        if (types.includes('locality')) city = comp.longText;
-        if (types.includes('postal_code')) postalCode = comp.longText;
-      });
-    }
+    place.address_components.forEach(comp => {
+      const types = comp.types;
+      if (types.includes('route')) street = comp.long_name;
+      if (types.includes('street_number')) itemNumber = comp.long_name;
+      if (types.includes('locality')) city = comp.long_name;
+      if (types.includes('postal_code')) postalCode = comp.long_name;
+    });
 
-    // Werte sauber in die datenbankgestützten Felder kopieren
-    if (place.displayName) {
-      document.getElementById('customerName').value = place.displayName;
+    if (place.name) {
+      document.getElementById('customerName').value = place.name;
     }
     document.getElementById('address').value = street + (itemNumber ? ' ' + itemNumber : '');
     document.getElementById('city').value = city;
     document.getElementById('postalCode').value = postalCode;
     
-    if (place.location) {
-      document.getElementById('lat').value = place.location.lat();
-      document.getElementById('lng').value = place.location.lng();
+    if (place.geometry && place.geometry.location) {
+      document.getElementById('lat').value = place.geometry.location.lat();
+      document.getElementById('lng').value = place.geometry.location.lng();
     }
 
-    // Leert das Suchfeld im DOM verzögert, um mobile Tastatur-Glitches zu verhindern
-    setTimeout(() => {
-      document.getElementById('googleSearchField').value = '';
-    }, 50);
+    setTimeout(() => { input.value = ''; }, 50);
   });
 }
 
@@ -455,36 +430,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script type="module">
-  import { APILoader } from 'https://cdn.jsdelivr.net/npm/@googlemaps/extended-component-library/dist/index.min.js';
-  
-  // Schlüssel übergeben
-  APILoader.apiKey = '<?= $googleMapsKey ?>';
-
-  // Warten, bis die Custom Elements im Browser registriert sind (Der Handshake)
-  customElements.whenDefined('gmpx-place-autocomplete').then(() => {
-    
-    // Autocomplete-Logik initialisieren
-    initAutocomplete();
-
-    // UI-Elemente auf "Bereit" umstellen
-    const inputField = document.getElementById('googleSearchField');
-    const statusLed = document.getElementById('searchStatusLed');
-    const statusText = document.getElementById('searchStatusText');
-
-    if (inputField) {
-      inputField.disabled = false;
-      inputField.style.background = '#fff';
-      inputField.style.cursor = 'text';
-      inputField.placeholder = 'Unternehmen tippen für Auto-Fill...';
-    }
-    if (statusLed) statusLed.textContent = '⚡';
-    if (statusText) statusText.textContent = '(Bereit)';
-  }).catch(err => {
-    console.error("Google Handshake fehlgeschlagen:", err);
-    const statusText = document.getElementById('searchStatusText');
-    if (statusText) statusText.textContent = '(Fehler beim Laden)';
-  });
-</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=<?= $googleMapsKey ?>&libraries=places&callback=initAutocomplete" async defer></script>
 </body>
 </html>

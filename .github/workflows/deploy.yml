@@ -12,12 +12,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Beschleuniger: Cache für Docker-Layer aktivieren
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: SFTP Deploy to Subdomain
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Fast Native SFTP Deploy
+        uses: Nandisha/sftp-deploy@v1.3.0
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
