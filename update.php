@@ -75,67 +75,8 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
   <meta charset="UTF-8">
   <title>Revision100™</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style-crm.css">
   <style>
-    :root { 
-      --font-mono: 'JetBrains Mono', monospace; 
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      --color-primary: #1FA47F; 
-      --color-dark: #000; 
-      --color-light: #fff; 
-    }
-    * { box-sizing: border-box; }
-
-    body {
-      background: #fff !important;
-      background-image: none !important;
-      font-family: var(--font-sans) !important;
-    }
-    .wrapper {
-      max-width: 600px;
-      margin: 0 auto;
-      background: var(--color-light);
-      color: var(--color-dark);
-      padding: 20px 16px;
-      position: relative;
-    }
-    header {
-        background: #fff !important;
-        background-image: none !important;
-        padding: 45px 32px 35px 32px !important;
-        border-bottom: 1px solid #000 !important;
-        margin-bottom: 40px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        display: block !important;
-    }
-
-    .brand {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-    }
-
-    .brand-name {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-        font-size: 32px !important;
-        font-weight: 700 !important;
-        letter-spacing: -1px !important;
-        line-height: 1.0 !important;
-        color: #000 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        display: inline-block !important;
-    }
-
-    .header-claim {
-        font-family: monospace !important;
-        font-size: 11px !important;
-        color: #666 !important;
-        margin-top: 8px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        display: block !important;
-    }
     h1, h2 {
       font-family: var(--font-mono);
       font-size: 16px;

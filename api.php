@@ -1,5 +1,12 @@
 <?php
-// api.php
+// /Users/timpoolair/R100-CRM/api.php
+if (file_exists(__DIR__ . '/.env')) {
+    $env = parse_ini_file(__DIR__ . '/.env');
+    foreach ($env as $key => $value) {
+        putenv("$key=$value");
+    }
+}
+
 require_once __DIR__ . '/session_handler.php';
 
 // Allow debug endpoints without auth
@@ -9,16 +16,6 @@ $debugEndpoints = ['psi_debug', 'test_psi_api'];
 
 if (!in_array($action, $debugEndpoints)) {
     check_auth();
-}
-
-// Load .env
-if (file_exists(__DIR__ . '/.env')) {
-    $env = parse_ini_file(__DIR__ . '/.env');
-    if ($env !== false) {
-        foreach ($env as $key => $value) {
-            putenv("$key=$value");
-        }
-    }
 }
 
 header('Content-Type: application/json');

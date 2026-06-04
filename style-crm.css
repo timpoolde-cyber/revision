@@ -1,8 +1,12 @@
 /* ===== HfG-ULM STYLE GUIDE: Radikaler Minimalismus ===== */
 
+html {
+  scrollbar-gutter: stable !important;
+}
+
 :root {
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   --bg-light: #ffffff;
   --bg-gray: #f0f0f0;
   --bg-dark: #161616;
@@ -28,12 +32,13 @@ html, body {
 }
 
 body {
-  background: var(--bg-light) !important;
-  color: var(--text-main) !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  max-width: 600px !important;
+  width: 100% !important;
   font-family: var(--font-sans) !important;
-  font-size: 13px;
-  line-height: 1.4;
-  overflow-x: hidden;
+  background: #fff !important;
+  color: #000 !important;
 }
 
 body.crm-body {
@@ -46,7 +51,7 @@ body.crm-body {
 header {
   background: var(--bg-light) !important;
   border-bottom: 1px solid #000000 !important;
-  padding: 45px 32px 35px 32px !important;
+  padding: 45px 16px 35px 16px !important;
   margin-bottom: 40px !important;
   width: 100%;
   box-sizing: border-box;
@@ -73,22 +78,6 @@ header {
   display: inline-block !important;
 }
 
-.status-led {
-  width: 12px !important;
-  height: 12px !important;
-  display: inline-block !important;
-  background-color: #2ecc71 !important;
-  border: 1px solid #000 !important;
-  border-radius: 0;
-}
-
-.status-led.unsaved {
-  background-color: #e74c3c !important;
-}
-
-.status-led.loading {
-  background-color: #f1c40f !important;
-}
 
 .header-claim {
   font-family: var(--font-mono) !important;
@@ -98,6 +87,25 @@ header {
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   display: block !important;
+}
+
+.status-square {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* ===== VISION CONTROL ===== */
+.status-squares {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 /* ===== CRM LAYOUT ===== */

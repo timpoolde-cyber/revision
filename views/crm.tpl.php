@@ -2,106 +2,10 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Revision100™ — System-Zentrale</title>
   <link rel="stylesheet" href="style-crm.css">
   <link rel="stylesheet" href="print.css">
-  <style>
-    :root {
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    html {
-      scrollbar-gutter: stable;
-    }
-    /* Globale Reset- und Strukturkorrekturen ohne !important im Hauptlayout */
-    body { 
-      background: #fff; 
-      background-image: none; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      margin: 0;
-      padding: 0;
-    }
-    
-    header, .crm-layout, .crm-toolbar, #leadsList {
-      width: 100%;           /* Mobil: Nutze die volle verfügbare Breite */
-      max-width: 600px;      /* Desktop: Stoppe das Wachstum exakt bei 600px */
-      margin-left: auto;     /* Zentriert das Element horizontal */
-      margin-right: auto;    /* Zentriert das Element horizontal */
-      box-sizing: border-box;
-    }
-
-    header { 
-      background: #fff; 
-      background-image: none; 
-      padding: 45px 16px 35px 16px; 
-      border-bottom: 1px solid #000; 
-      margin-top: 0;
-      margin-bottom: 40px; 
-      display: block; 
-    }
-    
-    .crm-layout {
-      display: flex;
-      flex-direction: column;
-      padding: 0;
-      width: 100%;
-    }
-
-    .crm-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .crm-toolbar {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid #000;
-      flex-wrap: wrap;
-    }
-
-    #leadsList {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 16px;
-    }
-
-    .brand { display: flex; align-items: center; gap: 16px; margin: 0; padding: 0; }
-    .brand-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1.0; color: #000; margin: 0; padding: 0; display: inline-block; }
-    
-    .status-led { width: 12px; height: 12px; display: inline-block; background-color: #2ecc71; border: 1px solid #000; }
-    .status-led.unsaved { background-color: #e74c3c; }
-    .status-led.loading { background-color: #f1c40f; }
-    
-    .header-claim { font-family: monospace; font-size: 11px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-    
-    .crm-toolbar select { flex: 1; min-width: 140px; padding: 8px 12px; border: 1px solid #000; font-family: var(--font-mono); font-size: 11px; background:#fff; color:#000; cursor:pointer; }
-    
-    @media (max-width: 768px) {
-      body { padding: 0; }
-      header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
-      .brand-name { font-size: 24px; }
-      .header-claim { font-size: 10px; }
-      .crm-toolbar { flex-direction: row; flex-wrap: nowrap; gap: 6px; align-items: stretch; }
-      .crm-toolbar select { width: calc(25% - 5px); }
-      .crm-toolbar button { width: calc(25% - 5px); font-size: 13px; padding: 8px 2px; }
-      .modal-form-row { margin-bottom: 12px; }
-      .modal-input { font-size: 16px; }
-      .modal-body > div[style*="grid-template-columns"] { display: flex; flex-direction: column; gap: 12px; }
-    }
-    
-    @media (max-width: 480px) {
-      header { padding: 16px 12px 12px 12px; margin-bottom: 14px; }
-      .crm-toolbar { padding: 8px 12px; }
-      .modal { width: 95vw; }
-      .modal-input { font-size: 16px; }
-      .btn-sm, .btn-sm-ghost { min-height: 44px; font-size: 13px; }
-    }
-  </style>
 </head>
 <body class="crm-body">
 

@@ -179,71 +179,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzerverwaltung — REVISION100™</title>
+    <link rel="stylesheet" href="style-crm.css">
     <style>
-        :root {
-            --bg-color: #1a2324;
-            --panel-bg: #111819;
-            --border-color: #2c3a3c;
-            --text-main: #d1dcd3;
-            --text-muted: #a8b8ba;
-            --teal-accent: #339999;
-            --orange-action: #ff6600;
-            --font-mono: ui-monospace, SFMono-Regular, "SF Pro Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #fff !important; background-image: none !important; color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important; font-size: 14px; padding: 0; }
         .container { max-width: 900px; margin: 0 auto; background-color: #fff; }
-        header {
-            background: #fff !important;
-            background-image: none !important;
-            padding: 45px 32px 35px 32px !important;
-            border-bottom: 1px solid #000 !important;
-            margin-bottom: 40px !important;
-            display: block !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-        .brand {
-            display: flex !important;
-            align-items: center !important;
-            gap: 16px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        .brand-name {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-            font-size: 32px !important;
-            font-weight: 700 !important;
-            letter-spacing: -1px !important;
-            line-height: 1.0 !important;
-            color: #000 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: inline-block !important;
-        }
-        .status-led {
-            width: 12px !important;
-            height: 12px !important;
-            display: inline-block !important;
-            background-color: #2ecc71 !important;
-            border: 1px solid #000 !important;
-        }
-        .status-led.unsaved {
-            background-color: #e74c3c !important;
-        }
-        .status-led.loading {
-            background-color: #f1c40f !important;
-        }
-        .header-claim {
-            font-family: monospace !important;
-            font-size: 11px !important;
-            color: #666 !important;
-            margin-top: 8px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
-            display: block !important;
-        }
         .user-info { font-size: 12px; color: #666; display: flex; gap: 15px; align-items: center; }
         .section { margin-bottom: 40px; padding: 0 20px; }
         .section-title { font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #000; }

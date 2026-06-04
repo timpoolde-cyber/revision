@@ -6,65 +6,9 @@
   <title>Rechnungs-Zentrale (INV) — <?= htmlspecialchars($project['customer_name']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
   <style>
-    :root {
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    html {
-      scrollbar-gutter: stable;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #fff;
-      color: #000;
-      font-family: var(--font-sans);
-      line-height: 1.5;
-    }
-
-    header, .crm-layout, .container {
-      max-width: 600px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-      box-sizing: border-box;
-    }
-
-    header {
-      padding: 45px 16px 35px 16px;
-      border-bottom: 1px solid #000;
-      margin-bottom: 40px;
-      display: block;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin: 0;
-      padding: 0;
-    }
-
-    .brand-name { 
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
-      font-size: 32px; 
-      font-weight: 700; 
-      letter-spacing: -1px; 
-      color: #000; 
-      margin: 0; 
-      padding: 0; 
-      display: inline-block; 
-    }
-
-    .container {
-      background: #fff;
-      padding: 0;
-    }
 
     .section {
-      padding: 16px 20px;
+      padding: 16px 20px !important;
       border-bottom: 1px solid #000;
     }
 
@@ -168,27 +112,6 @@
       text-transform: uppercase;
     }
 
-    .status-square {
-      width: 22px;
-      height: 22px;
-      border: 1px solid #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      header {
-        padding: 25px 16px 19px 16px;
-        margin-bottom: 22px;
-      }
-      .brand-name {
-        font-size: 24px;
-      }
-    }
   </style>
 </head>
 <body>

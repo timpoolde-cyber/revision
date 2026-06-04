@@ -5,27 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projekt: <?= htmlspecialchars($project['customer_name']) ?></title>
+  <link rel="stylesheet" href="style-crm.css">
   <style>
-    root {
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    html {
-      scrollbar-gutter: stable;
-    }
-
-    header { padding: 45px 16px 35px 16px; border-bottom: 1px solid #000; margin-bottom: 40px; display: block; }
-    .brand { display: flex; align-items: center; gap: 16px; margin: 0; padding: 0; }
-    .brand-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1.0; color: #000; margin: 0; padding: 0; display: inline-block; }
-    
-    .status-led { width: 12px; height: 12px; display: inline-block; background-color: #2ecc71; border: 1px solid #000; }
-    .status-led.unsaved { background-color: #e74c3c; }
-    .status-led.loading { background-color: #f1c40f; }
-    
-    .header-claim { font-family: monospace; font-size: 11px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-    .container { background: #fff; padding: 0; }
-    .content { padding: 16px 20px; margin: 0; }
     
     .btn-square { width: 48px; min-width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; border: 1px solid #000; cursor: pointer; font-family: var(--font-mono); flex-shrink: 0; }
     .btn-square:hover { background: #333; }
@@ -38,8 +19,6 @@
     .interaction:last-child { border-bottom: none; }
     .interaction-meta { color: #666; font-size: 11px; margin-bottom: 4px; }
     
-    .status-squares { display: flex; gap: 6px; margin-top: 8px; }
-    .status-square { width: 24px; height: 24px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #fff; border: 1px solid #000; }
     
     .action-row { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 32px; width: 100%; margin: 16px 0 20px 0; padding: 0; }
     .action-wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: auto; }
@@ -62,30 +41,6 @@
     .led.red { background: #ef4444; box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 0 8px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.3); }
     .action-button-wrapper { position: relative; display: inline-block; margin-bottom: 12px; }
     
-    @media (max-width: 768px) {
-      header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
-      .brand-name { font-size: 24px; }
-      .header-claim { font-size: 10px; }
-      .content { padding: 12px; }
-      .action-row { gap: 20px; margin: 14px 0 16px 0; }
-      .action-btn-square { width: 70px; height: 70px; padding: 5px; }
-      .btn-icon { font-size: 36px; }
-      textarea { font-size: 14px; min-height: 100px; }
-      .btn { min-height: 36px; font-size: 12px; }
-      .interaction { padding: 10px 0; font-size: 12px; }
-      .interaction-meta { font-size: 10px; }
-    }
-    @media (max-width: 480px) {
-      .content { padding: 8px; }
-      .action-row { gap: 16px; margin: 12px 0 14px 0; }
-      .action-btn-square { width: 64px; height: 64px; padding: 4px; }
-      .btn-label { font-size: 8px; }
-      .btn-icon { font-size: 32px; }
-      textarea { font-size: 12px; min-height: 80px; }
-      .btn { min-height: 32px; font-size: 11px; }
-      .interaction { padding: 8px 0; font-size: 11px; }
-      .interaction-meta { font-size: 9px; }
-    }
   </style>
 </head>
 <body>

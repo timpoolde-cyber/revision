@@ -4,36 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projektdaten: <?= htmlspecialchars($project['customer_name']) ?></title>
+  <link rel="stylesheet" href="style-crm.css">
   <style>
-    :root {
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    html {
-      scrollbar-gutter: stable;
-    }
-
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fff; margin: 0; padding: 0; color: #000; }
-    
-    header, .crm-layout, .container {
-      max-width: 600px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-      box-sizing: border-box;
-    }
-
-    header { padding: 45px 16px 35px 16px; border-bottom: 1px solid #000; margin-bottom: 40px; display: block; }
-    .brand { display: flex; align-items: center; gap: 16px; margin: 0; padding: 0; }
-    .brand-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1.0; color: #000; margin: 0; padding: 0; display: inline-block; }
-    
-    .status-led { width: 12px; height: 12px; display: inline-block; background-color: #2ecc71; border: 1px solid #000; }
-    .header-claim { font-family: monospace; font-size: 11px; color: #666; margin-top: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-    
-    .vision-control-bar { display: flex; gap: 4px; margin-top: 12px; height: 12px; }
-    .status-square { width: 22px; height: 22px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; color: #fff; }
-    
     .container { background: #fff; padding: 0; }
     .content { padding: 16px 20px; margin: 0; }
     
@@ -92,11 +64,6 @@
       background-color: #f5f5f5 !important;
     }
 
-    @media (max-width: 768px) {
-      header { padding: 25px 16px 19px 16px; margin-bottom: 22px; }
-      .brand-name { font-size: 24px; }
-      .header-claim { font-size: 10px; }
-    }
   </style>
 </head>
 <body>

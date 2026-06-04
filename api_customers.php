@@ -1,6 +1,16 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
+// /Users/timpoolair/R100-CRM/api_customers.php
+if (file_exists(__DIR__ . '/.env')) {
+    $env = parse_ini_file(__DIR__ . '/.env');
+    foreach ($env as $key => $value) {
+        putenv("$key=$value");
+    }
+}
+
 require_once __DIR__ . '/session_handler.php';
+check_auth();
+
+header('Content-Type: application/json; charset=utf-8');
 
 try {
     $dbFile = __DIR__ . '/data/rockets.db';
@@ -19,7 +29,7 @@ try {
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         $pMobile = $data['phone_mobile'] ?? ($data['phone'] ?? '');
         $pFixed  = $data['phone_fixed'] ?? '';
         $name    = $data['customer_name'] ?? '';
@@ -31,8 +41,8 @@ try {
         if (!$name) throw new Exception("Name fehlt.");
 
         if (isset($data['id']) && !empty($data['id'])) {
-            $sql = "UPDATE customers SET 
-                    customer_name = ?, email = ?, phone_mobile = ?, 
+            $sql = "UPDATE customers SET
+                    customer_name = ?, email = ?, phone_mobile = ?,
                     phone_fixed = ?, address = ?, city = ?, postal_code = ?,
                     updated_at = datetime('now','localtime')
                     WHERE id = ?";
@@ -42,13 +52,13 @@ try {
         } else {
             $maxId = (int)$pdo->query("SELECT MAX(id) FROM customers")->fetchColumn();
             $knr = 'KNR-' . str_pad($maxId + 1, 3, '0', STR_PAD_LEFT);
-            $sql = "INSERT INTO customers (knr, customer_name, email, phone_mobile, phone_fixed, address, city, postal_code) 
+            $sql = "INSERT INTO customers (knr, customer_name, email, phone_mobile, phone_fixed, address, city, postal_code)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$knr, $name, $email, $pMobile, $pFixed, $addr, $city, $plz]);
             $savedId = $pdo->lastInsertId();
         }
-        
+
         $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ?");
         $stmt->execute([$savedId]);
         echo json_encode(['success' => true, 'data' => $stmt->fetch(PDO::FETCH_ASSOC)]);
