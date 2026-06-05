@@ -157,6 +157,113 @@ function fetchPageSpeedInsights($targetUrl, $apiKey, $pdo) {
     return $results;
 }
 
+// Berechne aktuelle Phase und Farbe basierend auf Zeitstempel
+function calculatePhaseStatus($projectId, $db, $timeZone = 'Europe/Berlin') {
+    try {
+        $stmt = $db->prepare(
+            "SELECT phase_1_initiated_at, phase_2_evaluated_at, phase_3_contacted_at,
+                    phase_4_engaged_at, phase_5_implemented_at, phase_6_closed_at
+             FROM projects WHERE id = ?"
+        );
+        $stmt->execute([$projectId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            return ['phase' => null, 'color' => 'gray', 'secondsRemaining' => null];
+        }
+
+        // Bestimme höchste Phase mit Zeitstempel
+        $phases = [
+            1 => $result['phase_1_initiated_at'],
+            2 => $result['phase_2_evaluated_at'],
+            3 => $result['phase_3_contacted_at'],
+            4 => $result['phase_4_engaged_at'],
+            5 => $result['phase_5_implemented_at'],
+            6 => $result['phase_6_closed_at']
+        ];
+
+        $currentPhase = null;
+        $phaseTimestamp = null;
+        foreach (array_reverse($phases, true) as $num => $ts) {
+            if ($ts && !empty($ts)) {
+                $currentPhase = $num;
+                $phaseTimestamp = $ts;
+                break;
+            }
+        }
+
+        if (!$currentPhase) {
+            return ['phase' => null, 'color' => 'gray', 'secondsRemaining' => null];
+        }
+
+        // Berechne Zeit in Berlin-Zeitzone
+        $now = new DateTimeImmutable('now', new DateTimeZone($timeZone));
+        try {
+            $phaseStart = new DateTimeImmutable($phaseTimestamp, new DateTimeZone('UTC'))
+                ->setTimezone(new DateTimeZone($timeZone));
+        } catch (Exception $e) {
+            // Fallback für ungültige Timestamps
+            return ['phase' => $currentPhase, 'color' => 'gray', 'secondsRemaining' => null];
+        }
+
+        $secondsElapsed = $now->getTimestamp() - $phaseStart->getTimestamp();
+        $color = 'gray';
+        $secondsRemaining = null;
+
+        if ($currentPhase === 1) {
+            // Stufe 1: 0-3h grün, 3-5h orange, >5h rot
+            if ($secondsElapsed <= 3 * 3600) {
+                $color = 'green';
+                $secondsRemaining = (3 * 3600) - $secondsElapsed;
+            } elseif ($secondsElapsed <= 5 * 3600) {
+                $color = 'orange';
+                $secondsRemaining = (5 * 3600) - $secondsElapsed;
+            } else {
+                $color = 'red';
+                $secondsRemaining = null;
+            }
+        }
+        elseif ($currentPhase === 2) {
+            // Stufe 2: 0-24h grün, 24-36h orange, 36-48h rot, >48h rot
+            if ($secondsElapsed <= 24 * 3600) {
+                $color = 'green';
+                $secondsRemaining = (24 * 3600) - $secondsElapsed;
+            } elseif ($secondsElapsed <= 36 * 3600) {
+                $color = 'orange';
+                $secondsRemaining = (36 * 3600) - $secondsElapsed;
+            } else {
+                $color = 'red';
+                $secondsRemaining = null;
+            }
+        }
+        elseif ($currentPhase === 3 || $currentPhase === 4 || $currentPhase === 5) {
+            // Stufe 3, 4, 5: ereignisbasiert, sofort grün, keine Alterung
+            $color = 'green';
+            $secondsRemaining = null;
+        }
+        elseif ($currentPhase === 6) {
+            // Stufe 6: 0-14d grün mit Countdown, >14d grau
+            $limitSeconds = 14 * 86400;
+            if ($secondsElapsed <= $limitSeconds) {
+                $color = 'green';
+                $secondsRemaining = $limitSeconds - $secondsElapsed;
+            } else {
+                $color = 'gray';
+                $secondsRemaining = null;
+            }
+        }
+
+        return [
+            'phase' => $currentPhase,
+            'color' => $color,
+            'secondsRemaining' => $secondsRemaining
+        ];
+    } catch (Exception $e) {
+        error_log("calculatePhaseStatus error: " . $e->getMessage());
+        return ['phase' => null, 'color' => 'gray', 'secondsRemaining' => null];
+    }
+}
+
 // Ensure required tables and columns exist
 try {
     $db->exec("CREATE TABLE IF NOT EXISTS psi_results (
@@ -185,6 +292,31 @@ try {
 
 // Add last_interaction_date to projects if needed (virtual column via query)
 // No ALTER needed - we calculate it via subquery
+
+// Add phase columns to projects if they don't exist
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_1_initiated_at DATETIME");
+} catch (Exception $e) {}
+
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_2_evaluated_at DATETIME");
+} catch (Exception $e) {}
+
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_3_contacted_at DATETIME");
+} catch (Exception $e) {}
+
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_4_engaged_at DATETIME");
+} catch (Exception $e) {}
+
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_5_implemented_at DATETIME");
+} catch (Exception $e) {}
+
+try {
+    $db->exec("ALTER TABLE projects ADD COLUMN phase_6_closed_at DATETIME");
+} catch (Exception $e) {}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -398,6 +530,8 @@ if ($method === 'GET') {
     if ($action === 'get_leads') {
         $query = "
             SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
+                   p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
+                   p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
                    (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                    (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                    (SELECT performance_score FROM psi_results WHERE project_id = p.id AND strategy = 'mobile' ORDER BY fetch_timestamp DESC LIMIT 1) as psi_mobile_score,
@@ -410,11 +544,23 @@ if ($method === 'GET') {
         ";
         try {
             $stmt = $db->query($query);
-            echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Berechne Phase-Status für jeden Lead
+            foreach ($leads as &$lead) {
+                $phaseStatus = calculatePhaseStatus($lead['id'], $db);
+                $lead['current_phase'] = $phaseStatus['phase'];
+                $lead['phase_color'] = $phaseStatus['color'];
+                $lead['phase_timeout_seconds'] = $phaseStatus['secondsRemaining'];
+            }
+
+            echo json_encode(['success' => true, 'data' => $leads]);
         } catch (Exception $e) {
             // Fallback to simpler query if psi_results table doesn't exist yet
             $fallbackQuery = "
                 SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
+                       p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
+                       p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
                        (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                        (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                        NULL as psi_mobile_score,
@@ -426,7 +572,17 @@ if ($method === 'GET') {
                 ORDER BY p.updated_at DESC
             ";
             $stmt = $db->query($fallbackQuery);
-            echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Berechne Phase-Status für jeden Lead (Fallback)
+            foreach ($leads as &$lead) {
+                $phaseStatus = calculatePhaseStatus($lead['id'], $db);
+                $lead['current_phase'] = $phaseStatus['phase'];
+                $lead['phase_color'] = $phaseStatus['color'];
+                $lead['phase_timeout_seconds'] = $phaseStatus['secondsRemaining'];
+            }
+
+            echo json_encode(['success' => true, 'data' => $leads]);
         }
         exit;
     }
