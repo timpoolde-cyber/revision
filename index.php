@@ -72,12 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Kunde & Projekt anlegen
-            $stmt = $db->prepare("INSERT INTO customers (name, email, created_at) VALUES (?, ?, datetime('now'))");
+            $stmt = $db->prepare("INSERT INTO customers (customer_name, email) VALUES (?, ?)");
             $stmt->execute(['Anonyme Anfrage', $contact_mail]);
             $customer_id = $db->lastInsertId();
 
             $secret_token = bin2hex(random_bytes(16));
-            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, created_at, last_interaction) VALUES (?, ?, ?, 'anfrage', ?, datetime('now'), datetime('now'))");
+            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, updated_at) VALUES (?, ?, ?, 'anfrage', ?, CURRENT_TIMESTAMP)");
             $stmt->execute([$customer_id, 'Anonyme Anfrage', $target_url, $secret_token]);
 
             // Benachrichtigung senden
