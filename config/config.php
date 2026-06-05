@@ -8,7 +8,7 @@ return [
     'smtp' => [
         'host' => 'send.one.com',
         'user' => 'system@revision100.de',
-        'pass' => 'v,W69-A;E_8m',
+        'pass' => 'qajac7y4tecu',
         'port' => 587,
         'auth' => true,
         'secure' => 'tls'  // PHPMailer::ENCRYPTION_STARTTLS
