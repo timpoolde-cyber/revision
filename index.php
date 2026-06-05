@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $mail->SMTPAuth   = $smtp_config['auth'];
             $mail->Username   = $smtp_config['user'];
             $mail->Password   = $smtp_config['pass'];
-            $mail->SMTPSecure = $smtp_config['secure'];
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = $smtp_config['port'];
             $mail->CharSet    = 'UTF-8';
 
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $mail->send();
             $success_msg = "✓ System-Eintrag erfolgreich abgeschlossen. Ihre URL wurde eingereiht.";
         } catch (Exception $e) {
-            $error_msg = "Fehler beim SMTP-Versand: " . $mail->ErrorInfo;
+            $error_msg = "Fehler beim SMTP-Versand: " . (isset($mail) ? $mail->ErrorInfo : $e->getMessage());
         } catch (PDOException $e) {
             $error_msg = "Datenbank-Fehler: " . $e->getMessage();
         }
