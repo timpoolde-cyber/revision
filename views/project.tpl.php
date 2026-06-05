@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projekt: <?= htmlspecialchars($project['customer_name']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
+  <script src="../crm-functions.js"></script>
   <style>
     
     .btn-square { width: 48px; min-width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; border: 1px solid #000; cursor: pointer; font-family: var(--font-mono); flex-shrink: 0; }
@@ -46,8 +47,10 @@
 <body>
 
 <header>
-  <div class="brand"><span class="brand-name">Revision100™</span></div>
-  <div id="statusSquares" style="display: flex; gap: 4px; margin-top: 12px; height: 12px;"></div>
+  <div class="brand-container">
+    <div class="brand"><span class="brand-name">Revision100™</span></div>
+    <div id="statusSquares" class="status-squares"></div>
+  </div>
 </header>
 
 <div class="crm-layout">
@@ -269,54 +272,12 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
   }
 });
 
-const colorPalettes = {
-  green: ['#a3e4d7', '#7ed4c1', '#5cc4ab', '#3bb495', '#1fa47f', '#0d8659'],
-  orange: ['#FFE4B5', '#FFD699', '#FFC87D', '#FFBA61', '#FFAB45', '#FF9529'],
-  red: ['#FFB3B3', '#FF9999', '#FF7F7F', '#FF6565', '#FF4B4B', '#FF3131'],
-  gray: ['#D3D3D3', '#BEBEBE', '#A9A9A9', '#949494', '#7F7F7F', '#696969']
-};
-const phaseIndex = { anfrage: 0, analyse: 1, kontakt: 2, beauftragung: 3, umsetzung: 4, abgeschlossen: 5 };
-
-function getAgeStatus(lastInteractionDate) {
-  if (!lastInteractionDate) return 'green';
-  const last = new Date(lastInteractionDate);
-  const now = new Date();
-  const days = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-  if (days >= 13) return 'gray';
-  if (days >= 12) return 'red';
-  if (days >= 7) return 'orange';
-  return 'green';
-}
-
-function renderPhaseSquares() {
+document.addEventListener('DOMContentLoaded', () => {
   const currentPhase = '<?= htmlspecialchars($project['tunnel']) ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-  const phaseIdx = phaseIndex[currentPhase] || 0;
-  const status = getAgeStatus(lastInteractionDate);
-  const colors = colorPalettes[status];
   const container = document.getElementById('statusSquares');
-  container.innerHTML = '';
+  container.innerHTML = window.renderPhaseSquares(currentPhase, lastInteractionDate).html;
 
-  for (let i = 0; i < 6; i++) {
-    const square = document.createElement('div');
-    square.className = 'status-square';
-    square.style.width = '22px';
-    square.style.height = '22px';
-    square.style.border = '1px solid #000';
-    square.style.display = 'flex';
-    square.style.alignItems = 'center';
-    square.style.justifyContent = 'center';
-    square.style.fontSize = '9px';
-    square.style.fontWeight = 'bold';
-    square.style.background = i <= phaseIdx ? colors[i] : '#eee';
-    square.style.color = i <= phaseIdx ? '#fff' : '#ccc';
-    square.textContent = String(i + 1);
-    container.appendChild(square);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderPhaseSquares();
   const lastScore = <?= $project['last_score'] !== null ? $project['last_score'] : 'null' ?>;
   if (lastScore !== null) {
     const square = document.getElementById('lhSquare');
