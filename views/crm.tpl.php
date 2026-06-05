@@ -6,12 +6,15 @@
   <title>Revision100™ — System-Zentrale</title>
   <link rel="stylesheet" href="style-crm.css">
   <link rel="stylesheet" href="print.css">
+  <script src="../crm-functions.js"></script>
 </head>
 <body class="crm-body">
 
 <header>
-  <div class="brand"><span class="brand-name">Revision100™</span></div>
-  <div id="statusSquares" style="display: flex; gap: 4px; margin-top: 12px; height: 12px;"></div>
+  <div class="brand-container">
+    <div class="brand"><span class="brand-name">Revision100™</span></div>
+    <div id="statusSquares" class="status-squares"></div>
+  </div>
 </header>
 
 <div class="crm-layout">
@@ -278,19 +281,6 @@ function getTokenStatus(token_created_at, token_used_at, tunnel) {
   return { status: 'active', date: formatTokenDate(token_created_at), color: '#a3e4d7' };
 }
 
-function renderProgressSquares(phase, lastInteractionDate) {
-  const idx = phaseIndex[phase] || 0;
-  const status = getAgeStatus(lastInteractionDate);
-  const colors = colorPalettes[status];
-  let html = '';
-  for (let i = 0; i < 6; i++) {
-    const color = i <= idx ? colors[i] : '#eee';
-    const num = String(i + 1);
-    html += `<div style="width:22px;height:22px;background:${color};border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${i <= idx ? '#fff' : '#ccc'};">${num}</div>`;
-  }
-  return html;
-}
-
 function getLHColor(score) {
   if (!score) return '#eee';
   if (score >= 90) return '#0d8659';
@@ -320,7 +310,7 @@ function renderCard(l) {
     ${l.budget ? `<div style="font-family:var(--font-mono);font-size:11px;font-weight:bold;margin-bottom:8px;text-transform:uppercase;">Wert: ${parseFloat(l.budget).toLocaleString('de-DE', {style: 'currency', currency: 'EUR'})}</div>` : ''}
 
     <div style="display:flex;gap:4px;margin-bottom:12px;">
-      ${renderProgressSquares(l.tunnel, l.last_interaction_date)}
+      ${window.renderPhaseSquares(l.current_phase, l.phase_color, l.phase_timeout_seconds).html}
     </div>
 
     <div style="display:flex;gap:12px;align-items:start;padding-top:12px;border-top:1px solid #f0f0f0;font-size:12px;">
