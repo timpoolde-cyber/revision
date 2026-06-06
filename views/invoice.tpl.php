@@ -8,23 +8,9 @@
   <script src="../crm-functions.js"></script>
   <style>
 
-    .section {
-      padding: 16px 20px !important;
-      border-bottom: 1px solid #000;
-    }
-
-    .section:last-child {
-      border-bottom: none;
-    }
-
-    .section-title {
-      font-weight: bold;
-      font-size: 13px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      border-bottom: 1px solid #000;
-      padding-bottom: 8px;
-    }
+    .container { background: #fff; padding: 0; }
+    .content { padding: 16px 20px; margin: 0; display: flex; flex-direction: column; gap: 24px; }
+    .section-title { font-weight: bold; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 8px; }
 
     .form-group {
       margin-bottom: 14px;
@@ -129,9 +115,10 @@
 </div>
 
 <div class="container">
+  <div class="content">
 
-  <div class="section">
-    <div class="section-title">Projektwert & Stammdaten</div>
+    <div>
+      <div class="section-title">Projektwert & Stammdaten</div>
     <form method="POST" action="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
       <input type="hidden" name="action" value="save_project_value">
       <div class="form-group">
@@ -164,10 +151,10 @@
         <?php endif; ?>
       </select>
     </div>
-  </div>
+    </div>
 
-  <div class="section">
-    <div class="section-title">Rechnungs-Konfiguration</div>
+    <div>
+      <div class="section-title">Rechnungs-Konfiguration</div>
     <div class="toggle-row">
       <div class="toggle-item">
         <input type="checkbox" id="chkUstg" onchange="updateInvoicePreview()">
@@ -178,16 +165,16 @@
         <label for="chkVorkasse">Zahlungsart: Vorkasse</label>
       </div>
     </div>
-  </div>
+    </div>
 
-  <div class="section">
-    <div class="section-title">Rechnungs-Vorschau</div>
+    <div>
+      <div class="section-title">Rechnungs-Vorschau</div>
     <div class="invoice-preview-panel" id="invoicePreview"></div>
     <button type="button" class="btn" style="width: 100%; margin-top: 16px;" onclick="generateAndSendInvoice()">PDF Generieren & Rechnungsversand starten</button>
-  </div>
+    </div>
 
-  <div class="section">
-    <div class="section-title">Dokumentation</div>
+    <div>
+      <div class="section-title">Dokumentation</div>
     <div class="form-group" style="margin: 0;">
       <a
         href="pdf.php?id=<?= $currentProjectId ?>"
@@ -197,8 +184,9 @@
         → PDF-Export öffnen
       </a>
     </div>
-  </div>
+    </div>
 
+  </div>
 </div>
 
 <script>

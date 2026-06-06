@@ -4,26 +4,22 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
-  <title>Projekt: <?= htmlspecialchars($project['customer_name']) ?></title>
+  <title>Projekt: <?= htmlspecialchars($project['target_url']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
   <script src="../crm-functions.js"></script>
   <style>
     
     .btn-square { width: 48px; min-width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; border: 1px solid #000; cursor: pointer; font-family: var(--font-mono); flex-shrink: 0; }
     .btn-square:hover { background: #333; }
-    
-    .box { border: 1px solid #000; padding: 12px; margin-bottom: 16px; }
+
     .btn { background: #000; color: #fff; padding: 10px 16px; border: none; cursor: pointer; font-family: var(--font-mono); font-weight: bold; text-transform: uppercase; min-height: 40px; }
     .btn:hover { background: #333; }
     
     .interaction { border-bottom: 1px solid #ccc; padding: 12px 0; font-size: 13px; }
     .interaction:last-child { border-bottom: none; }
     .interaction-meta { color: #666; font-size: 11px; margin-bottom: 4px; }
-    
-    
-    .action-row { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; gap: 32px; width: 100%; margin: 16px 0 20px 0; padding: 0; }
-    .action-wrapper { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: auto; }
-    
+
+
     .action-btn-square { width: 72px; height: 72px; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; background: #0d7377; color: #fff; border: none; cursor: pointer; font-family: var(--font-mono); font-weight: bold; padding: 6px; margin: 0; box-sizing: border-box; }
     .btn-label { font-size: 9px; font-weight: normal; line-height: 1; margin-bottom: auto; }
     .btn-icon { font-size: 40px; font-weight: bold; margin-left: auto; margin-right: auto; margin-top: auto; width: 100%; text-align: center; }
@@ -36,12 +32,7 @@
     .action-btn-square.lh-square.red { background: #FF3131; color: #fff; }
     
     #sendTokenBtn { background: #000; color: #fff; font-size: 32px; }
-    
-    .led { width: 32px; height: 16px; border-radius: 2px; display: block; position: absolute; top: -24px; right: 0; background: #bbb; border: 1px solid #999; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.2); transition: background 0.3s, box-shadow 0.3s; }
-    .led.green { background: #10b981; box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 0 8px rgba(16,185,129,0.6), 0 2px 4px rgba(0,0,0,0.3); }
-    .led.red { background: #ef4444; box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 0 8px rgba(239,68,68,0.6), 0 2px 4px rgba(0,0,0,0.3); }
-    .action-button-wrapper { position: relative; display: inline-block; margin-bottom: 12px; }
-    
+
   </style>
 </head>
 <body>
@@ -58,28 +49,22 @@
 </div>
 
 <div class="container">
-  <div class="content">
-    
-    <div style="font-family: monospace; font-size: 14px; font-weight: bold; margin-bottom: 16px; border-bottom: 1px solid #000; padding-bottom: 8px;">
-      PROJEKT: <?= htmlspecialchars($project['customer_name']) ?>
-    </div>
+  <div class="content"><div class="section-title">PROJEKT: <?= htmlspecialchars($project['target_url']) ?></div>
 
-    <div class="action-row">
-      <div style="display: flex; gap: 24px;">
-        <div class="action-wrapper">
-          <span class="status-led" id="lhLed"></span>
-          <button class="action-btn-square lh-square" id="lhSquare" title="Klick für PSI-Messung">
-            <span class="btn-label">Score/PSI</span>
-            <span class="btn-icon">-</span>
-          </button>
-        </div>
-        <div class="action-wrapper">
-          <span class="status-led" id="tokenLed"></span>
-          <button class="action-btn-square" id="sendTokenBtn" style="background: #000;">
-            <span class="btn-label">Token</span>
-            <span class="btn-icon">Core</span>
-          </button>
-        </div>
+    <div class="action-row" style="display: flex; gap: 24px; margin: 0 0 20px 0; padding: 0;">
+      <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
+        <span class="led" id="lhLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
+        <button class="action-btn-square lh-square" id="lhSquare" title="Klick für PSI-Messung">
+          <span class="btn-label">Score/PSI</span>
+          <span class="btn-icon" style="font-size: 32px; line-height: 1.2; margin-top: 4px;">-</span>
+        </button>
+      </div>
+      <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
+        <span class="led" id="tokenLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
+        <button class="action-btn-square" id="sendTokenBtn" style="background: #000; padding: 6px;">
+          <span class="btn-label">Token</span>
+          <span class="btn-icon" style="font-size: 11px; line-height: 1.2; margin-top: 16px; font-weight: normal; font-family: var(--font-mono);">Core</span>
+        </button>
       </div>
     </div>
 
@@ -88,16 +73,16 @@
       $client_link = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/update.php?token=' . $project['secret_token'];
     ?>
       <div style="margin-top: 16px; padding: 12px; border: 1px dashed #000; background: #fafafa; margin-bottom: 24px;">
-        <label style="display:block; font-family:monospace; font-size:11px; text-transform:uppercase; color:#666; margin-bottom:4px;">
+        <label style="display:block; font-family: var(--font-mono); font-size:11px; text-transform:uppercase; color:#666; margin-bottom:4px;">
           Externer Kunden-Zugangslink (Token)
         </label>
         <div style="display: flex; gap: 8px; align-items: center;">
           <input type="text" value="<?= htmlspecialchars($client_link) ?>" readonly
                  onclick="this.select(); document.execCommand('copy'); alert('Link kopiert!');"
-                 style="flex: 1; font-family: monospace; font-size: 12px; padding: 6px; border: 1px solid #000; background: #fff; cursor: pointer;"
+                 style="flex: 1; font-family: var(--font-mono); font-size: 12px; padding: 6px; border: 1px solid #000; background: #fff; cursor: pointer;"
                  title="Klicken zum Kopieren">
           <a href="<?= htmlspecialchars($client_link) ?>" target="_blank"
-             style="display: inline-block; padding: 6px 12px; border: 1px solid #000; background: #000; color: #fff; font-family: monospace; font-size: 12px; text-decoration: none; font-weight: bold;">
+             style="display: inline-block; padding: 6px 12px; border: 1px solid #000; background: #000; color: #fff; font-family: var(--font-mono); font-size: 12px; text-decoration: none; font-weight: bold;">
             ÖFFNEN ↗
           </a>
         </div>
@@ -143,10 +128,11 @@ function getLHSquareColor(score) {
 }
 
 function showLED(ledElementId, success = true) {
+  console.log("LED getriggert", ledElementId, success);
   const led = document.getElementById(ledElementId);
   if (!led) return;
-  led.style.backgroundColor = success ? '#0d8659' : '#FF3131';
-  setTimeout(() => { led.style.backgroundColor = '#d1d5db'; }, 3000);
+  led.className = 'led ' + (success ? 'green' : 'red');
+  setTimeout(() => { led.className = 'led'; }, 3000);
 }
 
 function addInteractionNote(projectId, type, content) {
@@ -178,7 +164,25 @@ document.getElementById('sendTokenBtn').addEventListener('click', async (e) => {
 
     if (json.success && json.token) {
       const tokenLink = `${window.location.origin}/update.php?token=${json.token}`;
-      navigator.clipboard.writeText(tokenLink).catch(e => console.error('Clipboard error:', e));
+
+      // Robuster Clipboard-Fallback für unverschlüsselte IP-Aufrufe
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tokenLink).catch(e => console.error('Clipboard error:', e));
+      } else {
+        // Fallback für Nicht-HTTPS / IP-Umgebungen
+        const textarea = document.createElement('textarea');
+        textarea.value = tokenLink;
+        textarea.style.position = 'fixed'; // Verhindert Scroll-Sprüche
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback Clipboard error:', err);
+        }
+        document.body.removeChild(textarea);
+      }
+
       showLED('tokenLed', true);
       addInteractionNote(<?= $currentProjectId ?>, 'Aktion', getCurrentTime() + ' — Token generiert');
       setTimeout(() => location.reload(), 1000);
@@ -273,6 +277,9 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('lhLed').classList.remove('green', 'red');
+  document.getElementById('tokenLed').classList.remove('green', 'red');
+
   const currentPhase = '<?= htmlspecialchars($project['tunnel']) ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
   const container = document.getElementById('statusSquares');

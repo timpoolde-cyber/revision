@@ -127,37 +127,6 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       margin-top: 8px;
       letter-spacing: 0.5px;
     }
-    .form-group {
-      margin-bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .form-row-2col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    label {
-      display: block;
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #666;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #000;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      background: var(--color-light);
-    }
-    input:focus {
-      outline: none;
-      background: #fafafa;
-    }
 
     /* CSS Styling für das klassische Google Autocomplete Dropdown */
     .pac-container {
@@ -276,7 +245,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
     }
     @media (min-width: 640px) {
       body { padding: 40px 20px; }
-      .wrapper { padding: 40px; }
+      .container { padding: 40px; }
       h1 { font-size: 24px; }
       .score { font-size: 64px; }
     }
@@ -293,7 +262,8 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
   <div class="header-claim">Kundenportal // Stammdaten-Aktualisierung</div>
 </header>
 
-<div class="wrapper">
+<div class="container">
+  <div class="content">
   <h1>Status Report</h1>
   <p>Projekt: <span class="project-url"><?= htmlspecialchars($data['target_url']) ?></span></p>
 
@@ -331,35 +301,35 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
     <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
 
     <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
-      <label style="color: #000;">⚡ Google Blitz-Suche (Findet Ihre Firma automatisch)</label>
-      <input type="text" id="googleSearchField" placeholder="Unternehmensnamen tippen..." autocomplete="off" style="font-size: 14px; padding: 10px;">
+      <label class="form-label" style="color: #000;">⚡ Google Blitz-Suche (Findet Ihre Firma automatisch)</label>
+      <input type="text" id="googleSearchField" class="form-input" placeholder="Unternehmensnamen tippen..." autocomplete="off">
     </div>
 
     <div class="form-group">
-      <label>Firma / Kundenname</label>
-      <input type="text" id="customerName" name="customer_name" value="<?= htmlspecialchars($data['customer_name'] ?? '') ?>" placeholder="Firmenname">
+      <label class="form-label">Firma / Kundenname</label>
+      <input type="text" id="customerName" class="form-input" name="customer_name" value="<?= htmlspecialchars($data['customer_name'] ?? '') ?>" placeholder="Firmenname">
     </div>
 
     <div class="form-group">
-      <label>Straße & Hausnummer</label>
-      <input type="text" id="address" name="address" value="<?= htmlspecialchars($data['address'] ?? '') ?>" placeholder="Straße und Hausnummer">
+      <label class="form-label">Straße & Hausnummer</label>
+      <input type="text" id="address" class="form-input" name="address" value="<?= htmlspecialchars($data['address'] ?? '') ?>" placeholder="Straße und Hausnummer">
     </div>
 
-    <div class="form-row-2col">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
       <div class="form-group">
-        <label>Stadt</label>
-        <input type="text" id="city" name="city" value="<?= htmlspecialchars($data['city'] ?? '') ?>" placeholder="Stadt">
+        <label class="form-label">Stadt</label>
+        <input type="text" id="city" class="form-input" name="city" value="<?= htmlspecialchars($data['city'] ?? '') ?>" placeholder="Stadt">
       </div>
       <div class="form-group">
-        <label>PLZ</label>
-        <input type="text" id="postalCode" name="postal_code" value="<?= htmlspecialchars($data['postal_code'] ?? '') ?>" placeholder="Postleitzahl">
+        <label class="form-label">PLZ</label>
+        <input type="text" id="postalCode" class="form-input" name="postal_code" value="<?= htmlspecialchars($data['postal_code'] ?? '') ?>" placeholder="Postleitzahl">
       </div>
     </div>
 
     <input type="hidden" id="lat" name="latitude" value="<?= htmlspecialchars($data['latitude'] ?? '') ?>">
     <input type="hidden" id="lng" name="longitude" value="<?= htmlspecialchars($data['longitude'] ?? '') ?>">
 
-    <h3 class="section-title">Personen / Ansprechpartner im Projekt</h3>
+    <div class="section-title" style="margin-top: 32px;">Personen / Ansprechpartner im Projekt</div>
 
     <?php if (!empty($contacts)): ?>
       <div style="margin-bottom: 24px;">
@@ -385,7 +355,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
       <p style="color: #999; font-size: 13px; margin-bottom: 24px;">Keine Kontakte definiert</p>
     <?php endif; ?>
 
-    <h3 class="section-title">Weitere Person hinzufügen</h3>
+    <div class="section-title" style="margin-top: 32px;">Weitere Person hinzufügen</div>
 
     <div id="contactsContainer"></div>
 
@@ -393,6 +363,7 @@ $mapsKey = getenv('GOOGLE_MAPS_KEY');
 
     <button type="submit" class="btn" style="margin-top: 20px;">Daten bestätigen</button>
   </form>
+  </div>
 </div>
 
 <script>

@@ -181,14 +181,8 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Benutzerverwaltung — REVISION100™</title>
     <link rel="stylesheet" href="style-crm.css">
     <style>
-        .container { max-width: 900px; margin: 0 auto; background-color: #fff; }
         .user-info { font-size: 12px; color: #666; display: flex; gap: 15px; align-items: center; }
         .section { margin-bottom: 40px; padding: 0 20px; }
-        .section-title { font-size: 11px; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #000; }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        input[type="text"], input[type="password"], input[type="email"] { background-color: #fff; border: 1px solid #000; color: #000; padding: 12px; font-family: var(--font-mono); font-size: 14px; }
-        input:focus { outline: none; border-color: #666; }
         .form-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .form-layout { grid-template-columns: 1fr; } header { padding: 25px 16px 19px 16px !important; margin-bottom: 22px !important; } .brand-name { font-size: 24px !important; } }
         button { background-color: #000; color: #fff; border: 1px solid #000; padding: 12px 20px; font-family: var(--font-mono); font-size: 12px; font-weight: bold; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
@@ -238,10 +232,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div id="statusSquares" style="display: flex; gap: 4px; margin-top: 12px; height: 12px;"></div>
     </header>
     <div class="container">
+      <div class="content">
 
-        <main>
-            <section class="section">
-                <div class="section-title">Passwort ändern</div>
+        <div class="section-title">Passwort ändern</div>
 
                 <?php if (!empty($status_meldung)): ?>
                     <div class="status-message <?php echo $status_typ; ?>">
@@ -249,31 +242,31 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-                    <input type="hidden" name="action" value="change_password">
+        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
+            <input type="hidden" name="action" value="change_password">
 
-                    <div class="form-layout">
-                        <div class="form-group">
-                            <label for="old_password">Aktuelles Passwort:</label>
-                            <input type="password" id="old_password" name="old_password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="new_password">Neues Passwort:</label>
-                            <input type="password" id="new_password" name="new_password" required placeholder="Min. 8 Zeichen">
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm_password">Passwort bestätigen:</label>
-                            <input type="password" id="confirm_password" name="confirm_password" required>
-                        </div>
-                    </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label class="form-label" for="old_password">Aktuelles Passwort:</label>
+                    <input type="password" id="old_password" class="form-input" name="old_password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="new_password">Neues Passwort:</label>
+                    <input type="password" id="new_password" class="form-input" name="new_password" required placeholder="Min. 8 Zeichen">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">Passwort bestätigen:</label>
+                    <input type="password" id="confirm_password" class="form-input" name="confirm_password" required>
+                </div>
+            </div>
 
-                    <button type="submit" style="align-self: flex-start;">Passwort ändern</button>
-                </form>
-            </section>
+            <button type="submit" style="align-self: flex-start;">Passwort ändern</button>
+        </form>
 
-            <section class="section hidden" id="edit-section">
-                <div class="section-title">Benutzer bearbeiten</div>
+        <div class="section-title" style="margin-top: 32px;">Benutzer bearbeiten</div>
+
+        <div style="display: none;" id="edit-section">
 
                 <?php if (!empty($status_meldung) && $status_typ): ?>
                     <div class="status-message <?php echo $status_typ; ?>">
@@ -281,100 +274,97 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-                    <input type="hidden" name="action" value="edit_user">
-                    <input type="hidden" name="edit_user_id" id="edit_user_id" value="">
+        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
+            <input type="hidden" name="action" value="edit_user">
+            <input type="hidden" name="edit_user_id" id="edit_user_id" value="">
 
-                    <div class="form-layout">
-                        <div class="form-group">
-                            <label for="edit_username">Benutzername:</label>
-                            <input type="text" id="edit_username" name="edit_username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit_role">Rolle:</label>
-                            <select id="edit_role" name="edit_role" required style="background-color: #182224; border: 1px solid var(--border-color); color: #ffffff; padding: 12px; font-family: var(--font-mono); font-size: 14px;">
-                                <option value="0">Mitarbeiter</option>
-                                <option value="1">Administrator</option>
-                            </select>
-                        </div>
-                    </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label class="form-label" for="edit_username">Benutzername:</label>
+                    <input type="text" id="edit_username" class="form-input" name="edit_username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit_role">Rolle:</label>
+                    <select id="edit_role" class="form-input" name="edit_role" required style="background-color: #182224; border: 1px solid var(--border-color); color: #ffffff;">
+                        <option value="0">Mitarbeiter</option>
+                        <option value="1">Administrator</option>
+                    </select>
+                </div>
+            </div>
 
-                    <div style="display: flex; gap: 10px; align-self: flex-start;">
-                        <button type="submit" style="background-color: var(--teal-accent);">Speichern</button>
-                        <button type="button" style="background-color: var(--text-muted);" onclick="cancelEdit()">Abbrechen</button>
-                    </div>
-                </form>
-            </section>
+            <div style="display: flex; gap: 10px; align-self: flex-start;">
+                <button type="submit" style="background-color: var(--teal-accent);">Speichern</button>
+                <button type="button" style="background-color: var(--text-muted);" onclick="cancelEdit()">Abbrechen</button>
+            </div>
+        </form>
+        </div>
 
-            <section class="section">
-                <div class="section-title">Neuen Benutzer anlegen</div>
+        <div class="section-title" style="margin-top: 32px;">Neuen Benutzer anlegen</div>
 
-                <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-                    <input type="hidden" name="action" value="create_user">
+        <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
+            <input type="hidden" name="action" value="create_user">
 
-                    <div class="form-layout">
-                        <div class="form-group">
-                            <label for="username">Benutzername:</label>
-                            <input type="text" id="username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Passwort:</label>
-                            <input type="password" id="password" name="password" required placeholder="Min. 8 Zeichen">
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm_password_new">Passwort bestätigen:</label>
-                            <input type="password" id="confirm_password_new" name="confirm_password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="role">Rolle:</label>
-                            <select id="role" name="role" required style="background-color: #182224; border: 1px solid var(--border-color); color: #ffffff; padding: 12px; font-family: var(--font-mono); font-size: 14px;">
-                                <option value="">-- Wählen Sie eine Rolle --</option>
-                                <option value="0">Mitarbeiter</option>
-                                <option value="1">Administrator</option>
-                            </select>
-                        </div>
-                    </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label class="form-label" for="username">Benutzername:</label>
+                    <input type="text" id="username" class="form-input" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Passwort:</label>
+                    <input type="password" id="password" class="form-input" name="password" required placeholder="Min. 8 Zeichen">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password_new">Passwort bestätigen:</label>
+                    <input type="password" id="confirm_password_new" class="form-input" name="confirm_password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="role">Rolle:</label>
+                    <select id="role" class="form-input" name="role" required style="background-color: #182224; border: 1px solid var(--border-color); color: #ffffff;">
+                        <option value="">-- Wählen Sie eine Rolle --</option>
+                        <option value="0">Mitarbeiter</option>
+                        <option value="1">Administrator</option>
+                    </select>
+                </div>
+            </div>
 
-                    <button type="submit" style="align-self: flex-start;">Benutzer erstellen</button>
-                </form>
-            </section>
+            <button type="submit" style="align-self: flex-start;">Benutzer erstellen</button>
+        </form>
 
-            <section class="section">
-                <div class="section-title">Alle Benutzer</div>
+        <div class="section-title" style="margin-top: 32px;">Alle Benutzer</div>
 
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Benutzername</th>
-                            <th>Rolle</th>
-                            <th>Erstellt am</th>
-                            <th>Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users as $user): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($user['username']); ?></td>
-                                <td>
-                                    <?php if ($user['is_admin']): ?>
-                                        <span class="badge">Admin</span>
-                                    <?php else: ?>
-                                        <span style="color: var(--text-muted);">Benutzer</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo htmlspecialchars(substr($user['created_at'], 0, 10)); ?></td>
-                                <td style="display: flex; gap: 8px;">
-                                    <button type="button" style="background-color: var(--teal-accent); padding: 6px 10px; font-size: 11px;" onclick="editUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', <?php echo $user['is_admin']; ?>)">Bearbeiten</button>
-                                    <button type="button" style="background-color: #cc3a21; padding: 6px 10px; font-size: 11px;" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')">Löschen</button>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </section>
-        </main>
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Benutzername</th>
+                    <th>Rolle</th>
+                    <th>Erstellt am</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($users as $user): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td>
+                            <?php if ($user['is_admin']): ?>
+                                <span class="badge">Admin</span>
+                            <?php else: ?>
+                                <span style="color: var(--text-muted);">Benutzer</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo htmlspecialchars(substr($user['created_at'], 0, 10)); ?></td>
+                        <td style="display: flex; gap: 8px;">
+                            <button type="button" style="background-color: var(--teal-accent); padding: 6px 10px; font-size: 11px;" onclick="editUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', <?php echo $user['is_admin']; ?>)">Bearbeiten</button>
+                            <button type="button" style="background-color: #cc3a21; padding: 6px 10px; font-size: 11px;" onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')">Löschen</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+      </div>
     </div>
 
 <script>

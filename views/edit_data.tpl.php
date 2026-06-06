@@ -7,23 +7,13 @@
   <link rel="stylesheet" href="style-crm.css">
   <script src="../crm-functions.js"></script>
   <style>
-    .container { background: #fff; padding: 0; }
-    .content { padding: 16px 20px; margin: 0; }
-    
-    .section-title { font-weight: bold; font-size: 13px; margin: 20px 0 12px 0; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 8px; }
-    .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .form-label { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
-    .form-input { padding: 8px; border: 1px solid #000; font-family: var(--font-mono); font-size: 12px; box-sizing: border-box; width: 100%; }
-    
     .btn { background: #000; color: #fff; border: 1px solid #000; padding: 10px 16px; font-family: var(--font-mono); font-weight: bold; text-transform: uppercase; cursor: pointer; }
     .btn:hover { background: #333; }
     .btn-secondary { background: #fff; color: #000; border: 1px solid #000; }
     .btn-secondary:hover { background: #f0f0f0; }
     .btn-danger { background: #ff3131; color: #fff; border: 1px solid #ff3131; }
     .btn-danger:hover { background: #cc2424; }
-    
-    .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    
+
     .contact-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -82,9 +72,8 @@
 
 <div class="container">
   <div class="content">
-    
-    <div>
-      <div class="section-title">Projektdaten</div>
+
+    <div class="section-title">Projektdaten</div>
       
       <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
         <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
@@ -107,7 +96,7 @@
       </div>
       <input type="hidden" id="lat" value="">
       <input type="hidden" id="lng" value="">
-      <div class="form-row-2col">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
         <div class="form-group">
           <label class="form-label">Stadt</label>
           <input type="text" id="city" class="form-input" value="<?= htmlspecialchars($project['city'] ?? '') ?>">
@@ -139,11 +128,9 @@
           </div>
         </div>
       <?php endif; ?>
-    </div>
 
-    <div>
-      <div class="section-title">Projektkontakte / Ansprechpartner</div>
-      <div id="contactsGrid">
+    <div class="section-title">Projektkontakte / Ansprechpartner</div>
+    <div id="contactsGrid">
         <?php if (!empty($contacts)): ?>
           <?php foreach ($contacts as $contact): ?>
             <div class="contact-row">

@@ -299,8 +299,12 @@ function renderCard(l) {
   return `<a href="project.php?id=${l.id}" style="text-decoration:none;color:inherit;display:block;border:1px solid #000;padding:16px;margin-bottom:12px;background:#fff;transition:background 0.2s;cursor:pointer;">
     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
       <div style="flex:1;">
-        <div style="font-weight:600;font-size:15px;margin-bottom:4px;">${esc(l.customer_name)}</div>
-        ${l.default_contact_name ? `<div style="font-size:12px;color:#333;font-weight:500;margin-bottom:4px;">${esc(l.default_contact_name)}</div>` : ''}
+        <div style="font-family:var(--font-mono);font-size:11px;color:#666;text-transform:uppercase;margin-bottom:4px;">Firma</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;">${esc(l.customer_name)}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:#666;text-transform:uppercase;margin-bottom:4px;">Website</div>
+        <div style="font-weight:600;font-size:14px;margin-bottom:8px;word-break:break-all;">${esc(l.target_url)}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:#666;text-transform:uppercase;margin-bottom:4px;">Kontakt</div>
+        <div style="font-size:12px;color:#333;margin-bottom:4px;">${esc(l.email || '–')}</div>
       </div>
       ${tokenStatus.status !== 'none' ? `<div style="background:${tokenStatus.color};padding:6px 10px;border-radius:2px;font-size:11px;font-weight:600;color:#000;white-space:nowrap;margin-left:12px;"><div style="font-size:9px;color:#333;">${tokenStatusLabel}</div><div>${tokenStatus.date}</div></div>` : ''}
     </div>
