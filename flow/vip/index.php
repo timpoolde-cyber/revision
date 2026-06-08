@@ -397,30 +397,73 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 <?php if (!$customer): ?>
 
 <div class="section">
-<div class="title">r400™ audit-anfrage</div>
-<form method="post" onsubmit="return submitForm(event)" id="auditForm">
-    <div class="form-2col">
-        <div class="form-group">
-            <label class="form-label">website *</label>
-            <input type="url" name="url" class="form-input required" required placeholder="z.b. example.de" autocomplete="url">
+    <!-- Dominanter HfG-Header oben links -->
+    <div class="hfg-brand" style="font-size: 24px; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; text-transform: uppercase;">R400™</div>
+    <div class="hfg-sub" style="font-size: 11px; color: var(--di); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px;">// system-interface / premium-audit</div>
+
+    <!-- Strukturiertes Informations- und Parameterfeld -->
+    <div class="text-block" style="margin-bottom: 24px; border-left: 2px solid var(--line); background: transparent; padding-left: 12px; border-top: none; border-right: none; border-bottom: none;">
+        // parameter: karte übergeben / timo<br>
+        willkommen im r400-interface. das system erwartet deine eingabe für den code-audit.<br>
+        <br>
+        // anweisung:<br>
+        1. website und e-mail-adresse eingeben (system-pflichtfelder für den quick-report).<br>
+        2. name und mobilnummer optional hinzufügen, wenn ein detaillierter tiefenbefund direkt durch timo gewünscht ist.
+    </div>
+
+    <!-- Vorbereitete LH-Metriken im Ausgangszustand -->
+    <div class="grid" style="margin-bottom: 24px;">
+        <div class="cell" style="align-items: center; justify-content: center; text-align: center;">
+            <div class="score-num" style="color: var(--di); font-size: 24px;">--</div>
+            <div class="score-label">tempo</div>
         </div>
-        <div class="form-group">
-            <label class="form-label">email *</label>
-            <input type="email" name="email" class="form-input required" required placeholder="deine@email.de" autocomplete="email">
+        <div class="cell" style="align-items: center; justify-content: center; text-align: center;">
+            <div class="score-num" style="color: var(--di); font-size: 24px;">--</div>
+            <div class="score-label">sichtbar</div>
+        </div>
+        <div class="cell" style="align-items: center; justify-content: center; text-align: center;">
+            <div class="score-num" style="color: var(--di); font-size: 24px;">--</div>
+            <div class="score-label">ki-lesbar</div>
+        </div>
+        <div class="cell" style="align-items: center; justify-content: center; text-align: center;">
+            <div class="score-num" style="color: var(--di); font-size: 24px;">--</div>
+            <div class="score-label">struktur</div>
         </div>
     </div>
-    <div class="form-2col">
-        <div class="form-group">
-            <label class="form-label">name</label>
-            <input type="text" name="name" class="form-input optional" placeholder="optional" autocomplete="name">
+
+    <!-- Formular-Interface -->
+    <form method="post" onsubmit="return submitForm(event)" id="auditForm">
+        <div class="form-2col">
+            <div class="form-group">
+                <label class="form-label">website *</label>
+                <input type="url" name="url" class="form-input required" required placeholder="z.b. example.de" autocomplete="url">
+            </div>
+            <div class="form-group">
+                <label class="form-label">email *</label>
+                <input type="email" name="email" class="form-input required" required placeholder="deine@email.de" autocomplete="email">
+            </div>
         </div>
-        <div class="form-group">
-            <label class="form-label">telefon</label>
-            <input type="tel" name="phone" class="form-input optional" placeholder="optional" autocomplete="tel">
+        <div class="form-2col">
+            <div class="form-group">
+                <label class="form-label">name</label>
+                <input type="text" name="name" class="form-input optional" placeholder="optional" autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">telefon</label>
+                <input type="tel" name="phone" class="form-input optional" placeholder="optional" autocomplete="tel">
+            </div>
         </div>
+        <button type="submit" class="btn" id="submitBtn" style="margin-top: 12px;">audit starten →</button>
+    </form>
+
+    <!-- System-Notiz und Schnittstellen-Verweis statt Grußformel -->
+    <div class="text-block" style="margin-top: 24px; border: none; padding: 0; color: var(--di); font-size: 11px; line-height: 1.6;">
+        // system-notiz:<br>
+        die auswertung erfolgt automatisiert über die revision400™-audit-pipeline.<br>
+        <br>
+        // schnittstelle:<br>
+        wissenswertes zum auditor und projekt-hintergrund unter <a href="https://timpool.de" target="_blank" style="color: var(--gr); text-decoration: none;">// über timo</a>
     </div>
-    <button type="submit" class="btn" id="submitBtn">audit starten →</button>
-</form>
 </div>
 
 <?php elseif ($project['tunnel'] === 'anfrage'): ?>
@@ -498,8 +541,6 @@ if (is_array($quick)):
 </div>
 
 <?php endif; ?>
-
-<div class="footer">// über <a href="https://timpool.de" target="_blank">timo</a></div>
 
 </div>
 
