@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# 1. kurz-url für vip-karten
+RewriteRule ^vip$ /flow/vip/ [L,QSA,R=301]
+
+# 2. vorausschauend: kurz-url für maps/postkarten
+RewriteRule ^maps$ /flow/maps/ [L,QSA,R=301]
+
+# 3. vorausschauend: kurz-url für allgemeine leads
+RewriteRule ^lead$ /flow/lead/ [L,QSA,R=301]
