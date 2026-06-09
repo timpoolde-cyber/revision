@@ -435,10 +435,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         .s3-fill, .s3-l1, .s3-l2, .s3-stamp, .s3-low, .s3-high { animation-play-state: paused !important; }
 
         /* Aktivierung bei Klick */
-        #run01:checked ~ .vis-play,
-        #run02a:checked ~ .vis-play,
-        #run02b:checked ~ .vis-play,
-        #run03:checked ~ .vis-play { display: none !important; }
+        #run01:checked ~ .vis-btn,
+        #run02a:checked ~ .vis-btn,
+        #run02b:checked ~ .vis-btn,
+        #run03:checked ~ .vis-btn { display: none !important; }
 
         #run01:checked ~ svg :is(.s1-leave,.s1-bob,.s1-load,.s1-dot,.s1-res),
         #run02a:checked ~ svg :is(.rc-bot,.rc-beam,.rc-m1,.rc-m2,.rc-m3,.rc-m4),
@@ -687,7 +687,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <!-- INTERAKTIVER COMPETENCE-IMAGE-CONTAINER BLOCK 02a (URSACHE) -->
             <div class="competence-image-container" style="position:relative;overflow:hidden;background:var(--panel,#161616);border:1px solid var(--border-dark,#333);padding:24px;margin-bottom: 12px;">
                 <input type="checkbox" id="run02a" class="vis-toggle">
-                <label for="run02a" class="vis-play"><span class="pp">▶</span><span class="pt">Animation starten</span></label>
+                <label for="run02a" class="vis-btn"></label>
                 <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ein Crawler-Roboter liest strukturierte Seiten und überspringt deine unleserliche Seite">
                     <rect x="40" y="92" width="50" height="40" style="fill:var(--panel,#161616);stroke:var(--border-dark,#333);" stroke-width="1"/>
                     <rect x="46" y="100" width="38" height="3" style="fill:var(--text-muted,#9a9a9a);"/><rect x="46" y="108" width="38" height="3" style="fill:var(--text-muted,#9a9a9a);"/><rect x="46" y="116" width="26" height="3" style="fill:var(--text-muted,#9a9a9a);"/>
@@ -718,7 +718,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <!-- INTERAKTIVER COMPETENCE-IMAGE-CONTAINER BLOCK 02b (FOLGE) -->
             <div class="competence-image-container" style="position:relative;overflow:hidden;background:var(--panel,#161616);border:1px solid var(--border-dark,#333);padding:24px;">
                 <input type="checkbox" id="run02b" class="vis-toggle">
-                <label for="run02b" class="vis-play"><span class="pp">▶</span><span class="pt">Animation starten</span></label>
+                <label for="run02b" class="vis-btn"></label>
                 <svg viewBox="0 0 400 165" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eine KI-Antwort empfiehlt drei Mitbewerber, deine Seite wird ausgelassen">
                     <rect x="18" y="16" width="246" height="128" rx="4" style="fill:var(--panel,#161616);stroke:var(--border-dark,#333);" stroke-width="1"/>
                     <circle cx="33" cy="32" r="4" style="fill:var(--accent-green,#3ddc84);"/>
@@ -758,7 +758,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <!-- INTERAKTIVER COMPETENCE-IMAGE-CONTAINER BLOCK 03 -->
             <div class="competence-image-container" style="position:relative;overflow:hidden;background:var(--panel,#161616);border:1px solid var(--border-dark,#333);padding:24px;">
                 <input type="checkbox" id="run03" class="vis-toggle">
-                <label for="run03" class="vis-play"><span class="pp">▶</span><span class="pt">Animation starten</span></label>
+                <label for="run03" class="vis-btn"></label>
                 <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Score steigt von 40 auf 100 Prozent wenn Tempo und Struktur beide grün sind">
                     <text x="40" y="40" style="fill:var(--text-muted,#9a9a9a);" font-family="monospace" font-size="9">LIGHTHOUSE</text>
                     <rect x="40" y="52" width="320" height="14" fill="#2a2a2a"/>
