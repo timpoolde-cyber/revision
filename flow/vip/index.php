@@ -273,6 +273,19 @@ if ($token) {
 }
 
 // form submission
+if ($method === 'POST' && $token && isset($_POST['action']) && $_POST['action'] === 'deactivate_notifications') {
+    if ($project && $project['pid']) {
+        try {
+            db_update_project_phase($db, $project['pid'], 'abgeschaltet');
+            json_response(['ok' => true, 'message' => 'benachrichtigungen deaktiviert']);
+        } catch (Throwable $ex) {
+            error_log('[r400] deactivate error: ' . $ex->getMessage());
+            json_response(['ok' => false, 'error' => 'fehler beim deaktivieren'], 500);
+        }
+    }
+}
+
+// form submission
 if ($method === 'POST' && !$token) {
     $url = trim($_POST['url'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -436,8 +449,37 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 <?php elseif ($project['tunnel'] === 'anfrage'): ?>
 
 <div class="section">
-<div class="title">audit läuft...</div>
-<div class="loader-text"><span class="loader"></span> technische tiefenanalyse wird durchgeführt</div>
+    <div class="title">PORTAL — STATE 1 // PENDING</div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        // deine anfrage ist eingegangen.<br>
+        die analyse läuft.<br>
+        du bekommst eine nachricht sobald<br>
+        die ersten werte vorliegen.
+    </div>
+
+    <div class="status-badge" style="font-size: 11px; color: var(--di); text-transform: uppercase; margin-bottom: 32px;">
+        status: wird bearbeitet
+    </div>
+
+    <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
+        <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
+            // benachrichtigungen abschalten →
+        </a>
+    </div>
+</div>
+
+<?php elseif ($project['tunnel'] === 'abgeschaltet'): ?>
+
+<div class="section">
+    <div class="title">PORTAL — STATE 4 // BENACHRICHTIGUNGEN AUS</div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        // benachrichtigungen deaktiviert.<br>
+        dein befund liegt im portal bereit.<br>
+        wenn du ihn besprechen möchtest,<br>
+        ruf mich an.
+    </div>
 </div>
 
 <?php elseif ($project['tunnel'] === 'bewertet' && $psi): ?>
@@ -485,6 +527,14 @@ if (is_array($quick)):
 <div class="text-block"><?= e($qj['recommendation'] ?? '') ?></div>
 </div>
 
+<div class="section">
+<div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
+    <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
+        // benachrichtigungen abschalten →
+    </a>
+</div>
+</div>
+
 <?php endif; ?>
 
 <?php elseif ($project['tunnel'] === 'kontaktiert' && $psi): ?>
@@ -505,6 +555,14 @@ if (is_array($quick)):
 
 <div class="section">
 <button class="btn" onclick="alert('kontaktaufnahme folgt')">code-revision beauftragen →</button>
+</div>
+
+<div class="section">
+<div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
+    <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
+        // benachrichtigungen abschalten →
+    </a>
+</div>
 </div>
 
 <?php endif; ?>
@@ -547,6 +605,27 @@ async function submitForm(e) {
         btn.disabled = false;
         btn.textContent = '[ CHECK STARTEN → ]';
     }
+}
+
+async function deactivateNotifications(e) {
+    e.preventDefault();
+    if (!confirm('Benachrichtigungen deaktivieren und Funnel stoppen?')) return false;
+
+    const fd = new FormData();
+    fd.append('action', 'deactivate_notifications');
+
+    try {
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: fd
+        });
+        if (response.ok) {
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Fehler:', error);
+    }
+    return false;
 }
 </script>
 
