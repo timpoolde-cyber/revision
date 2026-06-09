@@ -269,6 +269,11 @@ if ($token) {
     if ($customer && $customer['pid']) {
         $project = $customer;
         $psi = db_get_psi_results($db, $project['pid']);
+
+        // Admin-Schutz: Keine Tracking-Updates bei adm=1
+        if (!(isset($_GET['adm']) && $_GET['adm'] === '1')) {
+            // Tracking-Logik hier (falls später implementiert)
+        }
     }
 }
 
@@ -485,57 +490,54 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 <?php elseif ($project['tunnel'] === 'bewertet' && $psi): ?>
 
 <div class="section">
-<div class="title">audit ergebnisse für <?= e($project['target_url']) ?></div>
-<div class="grid">
-    <div class="cell">
-        <div class="score-num"><?= (int)$psi['performance_score'] ?></div>
-        <div class="score-label">tempo</div>
+    <div class="title">PORTAL — STATE 2 // QUICK REPORT</div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        // erste auswertung fertig.
     </div>
-    <div class="cell">
-        <div class="score-num"><?= (int)$psi['seo_score'] ?></div>
-        <div class="score-label">sichtbar</div>
+
+    <?php
+    $quick = json_decode($psi['report_quick_json'], true);
+    if (is_array($quick)):
+        $qj = $quick;
+    ?>
+
+    <div class="report-scores" style="margin-bottom: 32px;">
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['performance_score'] ?> ] TEMPO</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['tempo'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['seo_score'] ?> ] SICHTBAR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['sichtbar'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['accessibility_score'] ?> ] KI-LESBAR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['ki'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['best_practices_score'] ?> ] STRUKTUR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['struktur'] ?? '') ?></div>
+        </div>
     </div>
-    <div class="cell">
-        <div class="score-num"><?= (int)$psi['accessibility_score'] ?></div>
-        <div class="score-label">ki-lesbar</div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        der vollständige befund folgt<br>
+        innerhalb von 24 stunden.
     </div>
-    <div class="cell">
-        <div class="score-num"><?= (int)$psi['best_practices_score'] ?></div>
-        <div class="score-label">struktur</div>
+
+    <div class="status-badge" style="font-size: 11px; color: var(--di); text-transform: uppercase; margin-bottom: 32px;">
+        status: tiefenanalyse läuft
+    </div>
+
+    <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
+        <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
+            // benachrichtigungen abschalten →
+        </a>
     </div>
 </div>
-</div>
 
-<?php
-$quick = json_decode($psi['report_quick_json'], true);
-if (is_array($quick)):
-    $qj = $quick;
-?>
-
-<div class="section">
-<div class="title">schnelleinschätzung</div>
-<div class="text-block">
-    <strong>tempo:</strong> <?= e($qj['tempo'] ?? '') ?><br><br>
-    <strong>sichtbar:</strong> <?= e($qj['sichtbar'] ?? '') ?><br><br>
-    <strong>ki-lesbar:</strong> <?= e($qj['ki'] ?? '') ?><br><br>
-    <strong>struktur:</strong> <?= e($qj['struktur'] ?? '') ?>
-</div>
-</div>
-
-<div class="section">
-<div class="title">priorität</div>
-<div class="text-block"><?= e($qj['recommendation'] ?? '') ?></div>
-</div>
-
-<div class="section">
-<div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
-    <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
-        // benachrichtigungen abschalten →
-    </a>
-</div>
-</div>
-
-<?php endif; ?>
+    <?php endif; ?>
 
 <?php elseif ($project['tunnel'] === 'kontaktiert' && $psi): ?>
 
