@@ -1,6 +1,6 @@
 <?php
 /**
- * REVISION100™ — SYSTEM INITIALISIERUNG, ROUTING, CRM-INTEGRATION & ADMIN-GATEWAY
+ * R400™ — SYSTEM INITIALISIERUNG, ROUTING, CRM-INTEGRATION & ADMIN-GATEWAY
  * Sende-Protokoll via PHPMailer & SQLite-Direct-Inject // Inklusive nativem CRM-Login
  */
 
@@ -39,7 +39,7 @@ $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
 $request_path = parse_url($request_uri, PHP_URL_PATH);
 $request_path = trim($request_path, '/');
 
-$page_title = "REVISION100™ — Quelltext-Sanierung bei Google-Rankingverlust";
+$page_title = "R400™ — Quelltext-Sanierung bei Google-Rankingverlust";
 $dynamic_keyword = "Google-Rankingverlust";
 
 if (!empty($request_path)) {
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $mail->Port       = $smtp_config['port'];
             $mail->CharSet    = 'UTF-8';
 
-            $mail->setFrom('system@revision100.de', 'Revision100');
+            $mail->setFrom('system@revision100.de', 'R400');
             $mail->addAddress($contact_mail);
 
             $mail->isHTML(true);
@@ -424,10 +424,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         /* --- CSS-STEUERUNG FÜR DIE INTERAKTIVEN DIAGRAMME (REINES CSS) --- */
         .vis-toggle { position: absolute !important; left: -9999px !important; }
-        .vis-play { position: absolute !important; inset: 0 !important; z-index: 2 !important; display: flex !important; flex-direction: column !important; gap: 8px !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; background: rgba(17,17,17,.55) !important; transition: background 0.2s ease !important; }
+        .vis-play { position: absolute !important; bottom: 8px !important; left: 8px !important; z-index: 2 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; align-items: center !important; justify-content: flex-start !important; cursor: pointer !important; background: rgba(17,17,17,.85) !important; padding: 8px !important; border: 1px solid var(--border-dark) !important; border-radius: 4px !important; transition: background 0.2s ease !important; }
         .vis-play .pp { width: 52px !important; height: 52px !important; border: 1px solid var(--accent-green) !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; color: var(--accent-green) !important; font-size: 18px !important; padding-left: 4px !important; background: rgba(17,17,17,0.8) !important; }
         .vis-play .pt { font-family: var(--font-mono) !important; font-size: 10px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; text-transform: uppercase !important; }
-        .vis-play:hover { background: rgba(17,17,17,.42) !important; }
+        .vis-play:hover { background: rgba(17,17,17,.95) !important; }
 
         /* Animationen standardmäßig pausieren */
         .s1-leave, .s1-bob, .s1-load, .s1-dot, .s1-res,
@@ -614,7 +614,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     <header>
         <div class="brand-wrapper">
-            <span class="brand-name">Revision100<span class="tm-size">™</span></span>
+            <span class="brand-name">R400<span class="tm-size">™</span></span>
         </div>
         <div class="header-claim">
             // Bei <?php echo htmlspecialchars($dynamic_keyword); ?>: Ihre Website wird nicht mehr gefunden. Ich repariere die Technik dahinter — zum Festpreis.
@@ -854,7 +854,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 
     <footer>
-        <div>Revision100™ ein Service von Timo E. Pohlhaus – <a href="https://timpool.de" style="color: var(--text-muted); text-decoration: none;">timpool.de</a></div>
+        <div>R400™ ein Service von Timo E. Pohlhaus – <a href="https://timpool.de" style="color: var(--text-muted); text-decoration: none;">timpool.de</a></div>
         <div class="manifest-banner" style="max-width: none; font-size: 11px; color: var(--text-muted); margin-top: 5px;">Kein Schmuck. Nur System. Kein Marketing-Sprech. Nur Daten.</div>
         <div class="footer-links">
             <a href="/datenschutz">Datenschutz</a> //
