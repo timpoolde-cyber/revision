@@ -424,7 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         /* --- CSS-STEUERUNG FÜR DIE INTERAKTIVEN DIAGRAMME (DEZENTER BUTTON UNTEN LINKS) --- */
         .vis-toggle { position: absolute !important; left: -9999px !important; }
-        .vis-btn { position: absolute !important; left: 14px !important; bottom: 14px !important; z-index: 2 !important; cursor: pointer !important; user-select: none !important; font-family: var(--font-mono,monospace) !important; font-size: 9px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; border: 1px solid var(--border-dark) !important; padding: 4px 8px !important; background: rgba(17,17,17,.55) !important; transition: color .15s, border-color .15s !important; }
+        .vis-btn { position: absolute !important; left: 14px !important; bottom: 14px !important; z-index: 2 !important; cursor: pointer !important; user-select: none !important; font-family: var(--font-mono,monospace) !important; font-size: 9px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; border: 1px solid var(--border-dark) !important; padding: 4px 8px !important; background: rgba(17,17,17,.55) !important; outline: none !important; }
         .vis-btn::before { content: "▶ START" !important; }
         #run01:checked ~ .vis-btn::before,
         #run02a:checked ~ .vis-btn::before,
