@@ -427,6 +427,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         .vis-btn { position: absolute !important; left: 14px !important; bottom: 14px !important; z-index: 2 !important; cursor: pointer !important; user-select: none !important; font-family: var(--font-mono,monospace) !important; font-size: 9px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; border: 1px solid var(--border-dark) !important; padding: 4px 8px !important; background: rgba(17,17,17,.55) !important; transition: color .15s, border-color .15s !important; }
         .vis-btn::before { content: "▶ START" !important; }
         .vis-btn:hover { color: var(--accent-green) !important; border-color: var(--accent-green) !important; }
+        #run01:checked ~ .vis-btn::before,
+        #run02a:checked ~ .vis-btn::before,
+        #run02b:checked ~ .vis-btn::before,
+        #run03:checked ~ .vis-btn::before { content: "⏸ PAUSE" !important; }
 
         /* Animationen standardmäßig pausieren */
         .s1-leave, .s1-bob, .s1-load, .s1-dot, .s1-res,
@@ -438,7 +442,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         #run01:checked ~ .vis-btn,
         #run02a:checked ~ .vis-btn,
         #run02b:checked ~ .vis-btn,
-        #run03:checked ~ .vis-btn { display: none !important; }
+        #run03:checked ~ .vis-btn { }
 
         #run01:checked ~ svg :is(.s1-leave,.s1-bob,.s1-load,.s1-dot,.s1-res),
         #run02a:checked ~ svg :is(.rc-bot,.rc-beam,.rc-m1,.rc-m2,.rc-m3,.rc-m4),
