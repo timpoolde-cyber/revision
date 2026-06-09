@@ -422,12 +422,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             height: auto !important;
         }
 
-        /* --- CSS-STEUERUNG FÜR DIE INTERAKTIVEN DIAGRAMME (REINES CSS) --- */
+        /* --- CSS-STEUERUNG FÜR DIE INTERAKTIVEN DIAGRAMME (DEZENTER BUTTON UNTEN LINKS) --- */
         .vis-toggle { position: absolute !important; left: -9999px !important; }
-        .vis-play { position: absolute !important; bottom: 8px !important; left: 8px !important; z-index: 2 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; align-items: center !important; justify-content: flex-start !important; cursor: pointer !important; background: rgba(17,17,17,.85) !important; padding: 8px !important; border: 1px solid var(--border-dark) !important; border-radius: 4px !important; transition: background 0.2s ease !important; }
-        .vis-play .pp { width: 52px !important; height: 52px !important; border: 1px solid var(--accent-green) !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; color: var(--accent-green) !important; font-size: 18px !important; padding-left: 4px !important; background: rgba(17,17,17,0.8) !important; }
-        .vis-play .pt { font-family: var(--font-mono) !important; font-size: 10px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; text-transform: uppercase !important; }
-        .vis-play:hover { background: rgba(17,17,17,.95) !important; }
+        .vis-btn { position: absolute !important; left: 14px !important; bottom: 14px !important; z-index: 2 !important; cursor: pointer !important; user-select: none !important; font-family: var(--font-mono,monospace) !important; font-size: 9px !important; letter-spacing: 1px !important; color: var(--text-muted) !important; border: 1px solid var(--border-dark) !important; padding: 4px 8px !important; background: rgba(17,17,17,.55) !important; transition: color .15s, border-color .15s !important; }
+        .vis-btn::before { content: "▶ START" !important; }
+        .vis-btn:hover { color: var(--accent-green) !important; border-color: var(--accent-green) !important; }
 
         /* Animationen standardmäßig pausieren */
         .s1-leave, .s1-bob, .s1-load, .s1-dot, .s1-res,
@@ -642,7 +641,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <!-- INTERAKTIVER COMPETENCE-IMAGE-CONTAINER BLOCK 01 -->
             <div class="competence-image-container" style="position:relative;overflow:hidden;background:var(--panel,#161616);border:1px solid var(--border-dark,#333);padding:24px;">
                 <input type="checkbox" id="run01" class="vis-toggle">
-                <label for="run01" class="vis-play"><span class="pp">▶</span><span class="pt">Animation starten</span></label>
+                <label for="run01" class="vis-btn"></label>
                 <svg viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Besucher wartet auf eine langsam ladende Seite und geht">
                     <rect x="235" y="34" width="140" height="86" style="fill:var(--panel,#161616);stroke:var(--border-dark,#333);" stroke-width="1"/>
                     <line x1="235" y1="48" x2="375" y2="48" style="stroke:var(--border-dark,#333);" stroke-width="1"/>
