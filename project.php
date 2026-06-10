@@ -57,9 +57,6 @@ $interactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $activeControl = 'History'; 
 
 $lighthouseKey = getenv('LIGHTHOUSE_KEY');
-if (empty($lighthouseKey)) {
-    $lighthouseKey = 'AIzaSyDd-5mfiEfL-myp5hHT9B4IXWpMTxk7sqM';
-}
 
 require_once __DIR__ . '/functions.php';
 

@@ -91,11 +91,7 @@ if (empty($contacts) && $project['customer_id']) {
 $activeControl = 'Data';
 require_once __DIR__ . '/functions.php';
 
-// Google Maps Key einlesen (mit Fallback aus vorigem String, falls nicht in .env)
 $googleMapsKey = getenv('GOOGLE_MAPS_KEY');
-if (empty($googleMapsKey)) {
-    $googleMapsKey = 'AIzaSyDd-5mfiEfL-myp5hHT9B4IXWpMTxk7sqM'; 
-}
 
 // 9. Das isolierte Design-Template laden
 require_once __DIR__ . '/views/edit_data.tpl.php';

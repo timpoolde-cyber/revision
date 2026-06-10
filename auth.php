@@ -12,6 +12,7 @@ require_once __DIR__ . '/session_handler.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
@@ -20,8 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($password === '1234ß') {
-        $_SESSION['authenticated'] = true;
+    if (login($username, $password)) {
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Zugriff verweigert']);

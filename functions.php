@@ -2,8 +2,8 @@
 // /Users/timpoolair/revision100/functions.php
 
 function sendTelegramMessage($message) {
-    $botToken = "8449205901:AAEV8vQxaIr4HZvI9qu_Ge8iB7X8p6jeXwM";
-    $chatId = "6498470414";
+    $botToken = getenv('TELEGRAM_BOT_TOKEN');
+    $chatId = getenv('TELEGRAM_CHAT_ID');
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, "https://api.telegram.org/bot" . $botToken . "/sendMessage");

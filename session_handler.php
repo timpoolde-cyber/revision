@@ -9,8 +9,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ===== LOKALE ENTWICKLUNGS-WEICHE =====
-// Für lokale Tests: Hart auf admin setzen, keine Umleitung
-define('LOCAL_DEV_MODE', true);
+// Environment-abhängig: Nur für lokale Entwicklung setzen
+define('LOCAL_DEV_MODE', getenv('APP_ENV') === 'local');
 
 if (LOCAL_DEV_MODE) {
     if (!isset($_SESSION['authenticated']) || !$_SESSION['authenticated']) {

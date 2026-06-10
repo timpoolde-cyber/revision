@@ -6,10 +6,10 @@
  */
 return [
     'smtp' => [
-        'host' => 'send.one.com',
-        'user' => 'system@revision100.de',
-        'pass' => 'qajac7y4tecu',
-        'port' => 587,
+        'host' => getenv('SMTP_HOST'),
+        'user' => getenv('SMTP_USER'),
+        'pass' => getenv('SMTP_PASS'),
+        'port' => getenv('SMTP_PORT') ?: 587,
         'auth' => true,
         'secure' => 'tls'  // PHPMailer::ENCRYPTION_STARTTLS
     ],
