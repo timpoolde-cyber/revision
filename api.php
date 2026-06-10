@@ -339,52 +339,6 @@ if ($method === 'GET') {
         exit;
     }
 
-    if ($action === 'run_psi_async') {
-        $projectId = $_GET['project_id'] ?? null;
-        if ($projectId) {
-            try {
-                $stmt = $db->prepare("SELECT p.id, p.target_url FROM projects p WHERE p.id = ?");
-                $stmt->execute([$projectId]);
-                $project = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($project) {
-                    $apiKey = getenv('GOOGLE_PSI_API_KEY');
-                    if (!$apiKey) {
-                        error_log("PSI Error: GOOGLE_PSI_API_KEY not set");
-                        exit;
-                    }
-
-                    $psiResults = fetchPageSpeedInsights($project['target_url'], $apiKey, $db);
-
-                    foreach ($psiResults as $strategy => $result) {
-                        if (isset($result['error'])) {
-                            $rawResponse = $result['raw'] ?? null;
-                            $stmt = $db->prepare("INSERT INTO psi_results (project_id, strategy, error_message, raw_response, fetch_timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                            $stmt->execute([$projectId, $strategy, $result['error'], $rawResponse]);
-
-                            // Telegram alert bei Fehler
-                            $telegramToken = getenv('TELEGRAM_TOKEN');
-                            if ($telegramToken) {
-                                $telegramChatId = getenv('TELEGRAM_CHAT_ID');
-                                if ($telegramChatId) {
-                                    $msg = "⚠️ PSI Fehler für Projekt {$projectId}: {$strategy} - {$result['error']}";
-                                    $tgUrl = "https://api.telegram.org/bot{$telegramToken}/sendMessage";
-                                    $opts = ['http' => ['method' => 'POST', 'content' => http_build_query(['chat_id' => $telegramChatId, 'text' => $msg]), 'timeout' => 2]];
-                                    @file_get_contents($tgUrl, false, stream_context_create($opts));
-                                }
-                            }
-                        } else {
-                            $stmt = $db->prepare("INSERT INTO psi_results (project_id, strategy, performance_score, accessibility_score, best_practices_score, seo_score, raw_response, fetch_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                            $stmt->execute([$projectId, $strategy, $result['score'], $result['accessibility'], $result['best_practices'], $result['seo'], $result['raw']]);
-                        }
-                    }
-                }
-            } catch (Exception $e) {
-                error_log("PSI Exception: " . $e->getMessage());
-            }
-        }
-        exit;
-    }
 
     if ($action === 'debug_project') {
         $projectId = $_GET['id'] ?? null;
@@ -572,13 +526,6 @@ if ($method === 'POST') {
             }
 
             $db->commit();
-
-            // Trigger PSI async (non-blocking)
-            if (!empty($url)) {
-                $asyncUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/api.php?action=run_psi_async&project_id=' . $id;
-                $opts = ['http' => ['method' => 'GET', 'timeout' => 1]];
-                @file_get_contents($asyncUrl, false, stream_context_create($opts));
-            }
 
             echo json_encode(['success' => true, 'id' => $id]);
         } catch (Exception $e) {
