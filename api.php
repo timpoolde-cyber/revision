@@ -9,14 +9,11 @@ if (file_exists(__DIR__ . '/.env')) {
 
 require_once __DIR__ . '/session_handler.php';
 
-// Allow debug endpoints without auth
+// All requests require authentication
 $method = $_SERVER['REQUEST_METHOD'];
 $action = ($method === 'GET') ? ($_GET['action'] ?? '') : (json_decode(file_get_contents('php://input'), true)['action'] ?? '');
-$debugEndpoints = ['psi_debug', 'test_psi_api'];
 
-if (!in_array($action, $debugEndpoints)) {
-    check_auth();
-}
+check_auth();
 
 header('Content-Type: application/json');
 
@@ -25,7 +22,8 @@ try {
     $db = new PDO('sqlite:' . $dbPath);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'error' => 'Datenbankfehler: ' . $e->getMessage()]);
+    error_log("Database connection error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
     exit;
 }
 
@@ -150,7 +148,8 @@ function fetchPageSpeedInsights($targetUrl, $apiKey, $pdo) {
             ];
 
         } catch (Exception $e) {
-            $results[$strategy] = ['error' => $e->getMessage(), 'raw' => isset($response) ? $response : 'No response captured'];
+            error_log("PSI fetch error: " . $e->getMessage());
+            $results[$strategy] = ['error' => 'API error'];
         }
     }
 
@@ -332,7 +331,7 @@ if ($method === 'GET') {
                 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 echo json_encode(['success' => true, 'data' => $results]);
             } catch (Exception $e) {
-                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
             }
         } else {
             echo json_encode(['success' => false, 'error' => 'Projekt ID erforderlich']);
@@ -435,91 +434,7 @@ if ($method === 'GET') {
         exit;
     }
 
-    if ($action === 'psi_debug') {
-        header('Content-Type: text/plain');
-        $projectId = $_GET['id'] ?? 6;
-        try {
-            $stmt = $db->prepare("SELECT id, project_id, strategy, performance_score, error_message, raw_response, fetch_timestamp FROM psi_results WHERE project_id = ? ORDER BY fetch_timestamp DESC LIMIT 5");
-            $stmt->execute([$projectId]);
-            $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            echo "PSI Debug für Projekt $projectId (letzte 5):\n";
-            echo "===========================================\n\n";
-
-            // Zeige auch die API-Key Info
-            $apiKey = getenv('GOOGLE_PSI_API_KEY');
-            echo "API Key Status: " . ($apiKey ? "SET (first 10 chars: " . substr($apiKey, 0, 10) . "...)" : "NOT SET") . "\n\n";
-
-            foreach ($records as $r) {
-                echo "ID: {$r['id']}\n";
-                echo "Strategy: {$r['strategy']}\n";
-                echo "Performance Score: " . ($r['performance_score'] ?? 'NULL') . "\n";
-                echo "Error: " . ($r['error_message'] ?? 'None') . "\n";
-                echo "Raw Response Length: " . strlen($r['raw_response'] ?? '') . " bytes\n";
-                if ($r['raw_response']) {
-                    echo "Raw Response (first 500 chars):\n";
-                    echo substr($r['raw_response'], 0, 500) . "\n";
-                }
-                echo "Timestamp: {$r['fetch_timestamp']}\n";
-                echo "---\n\n";
-            }
-        } catch (Exception $e) {
-            echo "ERROR: " . $e->getMessage();
-        }
-        exit;
-    }
-
-    if ($action === 'test_psi_api') {
-        header('Content-Type: text/plain; charset=utf-8');
-        ini_set('display_errors', 1);
-
-        $testUrl = $_GET['url'] ?? 'https://example.com';
-        $apiKey = getenv('GOOGLE_PSI_API_KEY');
-
-        if (!$apiKey) {
-            echo "ERROR: GOOGLE_PSI_API_KEY not set\n";
-            exit;
-        }
-
-        echo "Test PSI API call\n";
-        echo "=================\n\n";
-        echo "Target URL: $testUrl\n";
-        echo "API Key (first 10 chars): " . substr($apiKey, 0, 10) . "...\n\n";
-
-        $baseApiUrl = 'https://pagespeedonline.googleapis.com/v5/pagespeedapi/runPagespeed';
-        $categories = ['performance', 'accessibility', 'best-practices', 'seo'];
-        $categoryParts = array();
-        foreach ($categories as $cat) {
-            $categoryParts[] = "category=" . urlencode($cat);
-        }
-        $categoryParams = implode('&', $categoryParts);
-        $strategy = 'mobile';
-
-        $apiUrl = "{$baseApiUrl}?url=" . urlencode($testUrl) . "&key={$apiKey}&{$categoryParams}&strategy={$strategy}";
-
-        echo "Full API URL:\n";
-        echo $apiUrl . "\n\n";
-
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'timeout' => 60,
-                'ignore_errors' => true
-            ]
-        ]);
-
-        $response = @file_get_contents($apiUrl, false, $context);
-
-        echo "Response Status:\n";
-        if ($response === false) {
-            echo "Failed to fetch (no data returned)\n";
-        } else {
-            echo "Success - " . strlen($response) . " bytes\n\n";
-            echo "Response (first 1000 chars):\n";
-            echo substr($response, 0, 1000) . "\n";
-        }
-        exit;
-    }
 
     if ($action === 'get_customers') {
         $stmt = $db->query("SELECT id, customer_name, email, phone_mobile, address, city, postal_code, latitude, longitude FROM customers ORDER BY customer_name ASC");
@@ -625,7 +540,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'data' => ['id' => $id, 'token' => $customer['secret_token']]]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -668,7 +583,7 @@ if ($method === 'POST') {
             echo json_encode(['success' => true, 'id' => $id]);
         } catch (Exception $e) {
             if ($db->inTransaction()) $db->rollBack();
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -722,7 +637,7 @@ if ($method === 'POST') {
                 echo json_encode(['success' => false, 'error' => 'Email konnte nicht versendet werden (mail() returned false)', 'token' => $newToken, 'mail_result' => $mailSent, 'to' => $project['email']]);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => 'Exception: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            error_log('Exception: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -769,7 +684,7 @@ if ($method === 'POST') {
                 echo json_encode(['success' => false, 'error' => 'Email konnte nicht versendet werden']);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -798,7 +713,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'token' => $newToken]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -826,7 +741,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'token' => $newToken]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -903,7 +818,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'results' => $resultData]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -941,7 +856,7 @@ if ($method === 'POST') {
                 echo json_encode(['success' => false, 'error' => 'Email konnte nicht versendet werden']);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -962,7 +877,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Template gespeichert']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -982,7 +897,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'data' => $templates]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1007,7 +922,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'content' => $template['content']]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1026,7 +941,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Template gelöscht']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1060,7 +975,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Projektdaten gespeichert']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1086,7 +1001,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'contact_id' => $contactId, 'message' => 'Kontakt hinzugefügt']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1111,7 +1026,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Kontakt aktualisiert']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1130,7 +1045,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Kontakt gelöscht']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1151,7 +1066,7 @@ if ($method === 'POST') {
 
             echo json_encode(['success' => true, 'message' => 'Default-Kontakt gesetzt']);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }
@@ -1226,7 +1141,7 @@ if ($method === 'POST') {
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
     }

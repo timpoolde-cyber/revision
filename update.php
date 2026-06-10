@@ -29,19 +29,18 @@ if (!$data) {
     die("Link abgelaufen oder ungültig.");
 }
 
-// Check token validity
-$tokenValid = true;
-if ($data['tunnel'] === 'abgeschlossen') {
-    $createdAt = new DateTime($data['token_created_at'] ?? date('Y-m-d H:i:s'));
-    $now = new DateTime();
-    $diff = $now->diff($createdAt);
-    if ($diff->days > 5) {
-        $tokenValid = false;
+$now = new DateTime();
+$tokenExpired = false;
+
+if (isset($data['token_expires']) && !empty($data['token_expires'])) {
+    $expiresAt = new DateTime($data['token_expires']);
+    if ($now > $expiresAt) {
+        $tokenExpired = true;
     }
 }
 
-if (!$tokenValid) {
-    die("Dieser Zugangslink ist abgelaufen (Projekt abgeschlossen).");
+if ($tokenExpired) {
+    die("Zugriff abgelaufen.");
 }
 
 // Register token usage

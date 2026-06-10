@@ -22,6 +22,18 @@ if (empty($token)) {
     die("Fehler: Kein oder ungültiger Token.");
 }
 
+$now = new DateTime();
+$stmt = $db->prepare("SELECT token_expires FROM customers c JOIN projects p ON c.id = p.customer_id WHERE p.secret_token = ?");
+$stmt->execute([$token]);
+$tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if ($tokenData && isset($tokenData['token_expires']) && !empty($tokenData['token_expires'])) {
+    $expiresAt = new DateTime($tokenData['token_expires']);
+    if ($now > $expiresAt) {
+        die(json_encode(['success' => false, 'error' => 'Zugriff abgelaufen.']));
+    }
+}
+
 function formatPhoneNumber($phone) {
     $phone = trim($phone);
     if (empty($phone)) { return ''; }
