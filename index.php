@@ -56,32 +56,97 @@ if (!empty($request_path)) {
     }
 }
 
+// Telefonnummern-Formatierung Funktion
+function format_phone_number(string $value): string {
+    if (empty($value)) return '';
+
+    // Entferne Leerzeichen, Trennstriche, Schrägstriche
+    $cleaned = preg_replace('/[\s\-\/]/', '', $value);
+
+    // Wenn mit '00' beginnt: ersetze durch '+'
+    if (strpos($cleaned, '00') === 0) {
+        $cleaned = '+' . substr($cleaned, 2);
+    }
+    // Wenn mit einzelner '0' beginnt: ersetze durch '+49'
+    else if (strpos($cleaned, '0') === 0) {
+        $cleaned = '+49' . substr($cleaned, 1);
+    }
+    // Wenn bereits mit '+' beginnt: unverändert
+    // (keine weitere Aktion nötig)
+
+    return $cleaned;
+}
+
 // 2. LEAD-ERFASSUNG (DIRECT SQLITE INJECT)
 $success_msg = "";
 $error_msg = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_lead') {
-    $target_url = filter_var($_POST['target_url'] ?? '', FILTER_SANITIZE_URL);
-    $contact_mail = filter_var($_POST['contact_mail'] ?? '', FILTER_VALIDATE_EMAIL);
+    $target_url = trim($_POST['target_url'] ?? '');
+    $contact_primary = trim($_POST['contact_primary'] ?? '');
+    $contact_secondary = trim($_POST['contact_secondary'] ?? '');
+    $customer_name = trim($_POST['customer_name'] ?? '');
 
-    if (empty($target_url) || empty($contact_mail)) {
-        $error_msg = "Bitte füllen Sie beide Pflichtfelder aus.";
+    // URL-Toleranz: Fehlender Protokoll-Prefix hinzufügen
+    if (!empty($target_url) && strpos($target_url, 'http') === false) {
+        $target_url = 'https://' . $target_url;
+    }
+
+    $target_url = filter_var($target_url, FILTER_SANITIZE_URL);
+
+    // Intelligente Feldidentifikation (Strenge Regel: Startet mit Ziffer/+/ → Telefon, enthält @ → E-Mail)
+    $contact_email = '';
+    $contact_phone = '';
+
+    // Prüfe primary Feld
+    $primary_starts_with_digit = preg_match('/^[\d+\/]/', $contact_primary);
+    $primary_has_at_sign = strpos($contact_primary, '@') !== false;
+
+    if ($primary_has_at_sign) {
+        // Primary ist E-Mail
+        $contact_email = $contact_primary;
+        // Secondary ist dann ggf. Telefon
+        if (!empty($contact_secondary)) {
+            $contact_phone = $contact_secondary;
+        }
+    } else if ($primary_starts_with_digit) {
+        // Primary ist Telefon
+        $contact_phone = $contact_primary;
+        // Secondary ist dann E-Mail
+        if (!empty($contact_secondary)) {
+            $contact_email = $contact_secondary;
+        }
+    } else {
+        // Fallback: Primary als E-Mail, Secondary als Telefon
+        $contact_email = $contact_primary;
+        if (!empty($contact_secondary)) {
+            $contact_phone = $contact_secondary;
+        }
+    }
+
+    // Formatiere Telefonnummer ins internationale Format
+    if (!empty($contact_phone)) {
+        $contact_phone = format_phone_number($contact_phone);
+    }
+
+    if (empty($target_url) || empty($contact_email)) {
+        $error_msg = "Bitte füllen Sie URL und mindestens eine gültige E-Mail-Adresse aus.";
     } else {
         try {
             $db = new PDO('sqlite:' . $config['database']['path']);
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Setze customer_name direkt zur Target-URL
-            $customer_name = $target_url;
+            // Nutze customer_name, fallback auf URL wenn leer
+            $db_customer_name = !empty($customer_name) ? $customer_name : $target_url;
 
             // Kunde & Projekt anlegen
             $stmt = $db->prepare("INSERT INTO customers (customer_name, email) VALUES (?, ?)");
-            $stmt->execute([$customer_name, $contact_mail]);
+            $stmt->execute([$db_customer_name, $contact_email]);
             $customer_id = $db->lastInsertId();
 
             $secret_token = bin2hex(random_bytes(16));
-            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, updated_at) VALUES (?, ?, ?, 'anfrage', ?, CURRENT_TIMESTAMP)");
-            $stmt->execute([$customer_id, $customer_name, $target_url, $secret_token]);
+            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, phone_contact, updated_at) VALUES (?, ?, ?, 'anfrage', ?, ?, CURRENT_TIMESTAMP)");
+            $stmt->execute([$customer_id, $db_customer_name, $target_url, $secret_token, $contact_phone]);
 
             // Benachrichtigung senden
             $mail = new PHPMailer(true);
@@ -94,14 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $mail->Port       = $smtp_config['port'];
             $mail->CharSet    = 'UTF-8';
 
-            $mail->setFrom('system@revision100.de', 'R400');
-            $mail->addAddress($contact_mail);
+            $mail->setFrom('r400@revision100.de', 'R400™');
+            $mail->addAddress($contact_email);
 
             $mail->isHTML(true);
             $mail->Subject = "🆕 Neue Audit-Anfrage: " . $target_url;
             $mail->Body    = "<h3>Neue Anfrage registriert</h3>"
                            . "<strong>URL:</strong> " . htmlspecialchars($target_url) . "<br>"
-                           . "<strong>E-Mail:</strong> " . htmlspecialchars($contact_mail) . "<br>";
+                           . "<strong>E-Mail:</strong> " . htmlspecialchars($contact_email) . "<br>"
+                           . ($contact_phone ? "<strong>Telefon:</strong> " . htmlspecialchars($contact_phone) . "<br>" : "");
 
             $mail->send();
             $success_msg = "✓ System-Eintrag erfolgreich abgeschlossen. Ihre URL wurde eingereiht.";
@@ -824,14 +890,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <form action="<?php echo htmlspecialchars($_SERVER['REQUEST_URI']); ?>" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
                     <input type="hidden" name="action" value="submit_lead">
 
-                    <div class="form-grid">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
                         <div class="form-group">
                             <label class="form-label" for="target_url">Ziel-URL (Pflichtfeld)</label>
-                            <input type="url" id="target_url" class="form-input" name="target_url" placeholder="https://www.ihre-website.de" required>
+                            <input type="text" id="target_url" class="form-input" name="target_url" placeholder="https://www.ihre-website.de" autocomplete="url" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="contact_mail">E-Mail-Adresse (Pflichtfeld)</label>
-                            <input type="email" id="contact_mail" class="form-input" name="contact_mail" placeholder="name@unternehmen.de" required>
+                            <label class="form-label" for="contact_primary">E-Mail oder Mobilnummer (Pflichtfeld)</label>
+                            <input type="text" id="contact_primary" class="form-input" name="contact_primary" placeholder="E-Mail oder Mobilnummer" autocomplete="off" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="customer_name">Name (optional)</label>
+                            <input type="text" id="customer_name" class="form-input" name="customer_name" placeholder="Ihr Name" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" id="contact_secondary_label" for="contact_secondary">Mobilnummer (optional)</label>
+                            <input type="text" id="contact_secondary" class="form-input" name="contact_secondary" placeholder="+49 123 456789" autocomplete="tel">
                         </div>
                     </div>
 
@@ -911,6 +985,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if (window.location.search.indexOf('error=1') !== -1) {
         toggleCrmModal(true);
+    }
+
+    // Telefonnummern-Formatierung: Konvertiere zu internationalem Format (+49...)
+    function formatPhoneNumber(value) {
+        if (!value) return '';
+
+        // Entferne Leerzeichen, Trennstriche, Schrägstriche
+        let cleaned = value.replace(/[\s\-\/]/g, '');
+
+        // Wenn mit '00' beginnt: ersetze durch '+'
+        if (cleaned.startsWith('00')) {
+            cleaned = '+' + cleaned.substring(2);
+        }
+        // Wenn mit einzelner '0' beginnt: ersetze durch '+49'
+        else if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
+            cleaned = '+49' + cleaned.substring(1);
+        }
+        // Wenn bereits mit '+' beginnt: unverändert
+        else if (cleaned.startsWith('+')) {
+            // Unverändert
+        }
+
+        return cleaned;
+    }
+
+    // Chamäleon-Feld: contact_secondary mutiert basierend auf contact_primary
+    const contactPrimaryInput = document.getElementById('contact_primary');
+    const contactSecondaryLabel = document.getElementById('contact_secondary_label');
+    const contactSecondaryInput = document.getElementById('contact_secondary');
+
+    function updateSecondaryFieldLabel() {
+        if (!contactPrimaryInput || !contactSecondaryLabel || !contactSecondaryInput) return;
+
+        const value = contactPrimaryInput.value.trim();
+
+        // Telefon erkannt: Startet mit Ziffer, '+' oder '/'
+        if (/^\d/.test(value) || /^\+/.test(value) || /^\//.test(value)) {
+            contactSecondaryLabel.textContent = 'E-Mail-Adresse (optional)';
+            contactSecondaryInput.placeholder = 'name@unternehmen.de';
+            contactSecondaryInput.autocomplete = 'email';
+        }
+        // E-Mail erkannt: Enthält '@'
+        else if (/@/.test(value)) {
+            contactSecondaryLabel.textContent = 'Mobilnummer (optional)';
+            contactSecondaryInput.placeholder = '+49 123 456789';
+            contactSecondaryInput.autocomplete = 'tel';
+        }
+        // Standard: Mobilnummer
+        else {
+            contactSecondaryLabel.textContent = 'Mobilnummer (optional)';
+            contactSecondaryInput.placeholder = '+49 123 456789';
+            contactSecondaryInput.autocomplete = 'tel';
+        }
+    }
+
+    if (contactPrimaryInput) {
+        ['input', 'change', 'blur', 'keyup'].forEach(event => {
+            contactPrimaryInput.addEventListener(event, updateSecondaryFieldLabel);
+        });
+
+        // Formatierung für contact_primary bei blur (wenn Telefon)
+        contactPrimaryInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && (/^\d/.test(value) || /^\+/.test(value) || /^\//.test(value))) {
+                this.value = formatPhoneNumber(value);
+            }
+        });
+    }
+
+    // Formatierung für contact_secondary bei blur (wenn Telefon)
+    if (contactSecondaryInput) {
+        contactSecondaryInput.addEventListener('blur', function() {
+            const value = this.value.trim();
+            // Formatiere nur wenn aktuell als Telefon fungierend
+            const primaryValue = contactPrimaryInput?.value.trim() || '';
+            const primaryIsEmail = /@/.test(primaryValue);
+            if (value && primaryIsEmail) {
+                this.value = formatPhoneNumber(value);
+            }
+        });
+    }
+
+    // URL-Toleranz: Protokoll-Prefix hinzufügen bei blur
+    const targetUrlInput = document.getElementById('target_url');
+    if (targetUrlInput) {
+        targetUrlInput.addEventListener('blur', function() {
+            if (this.value && !this.value.match(/^https?:\/\//i)) {
+                this.value = 'https://' + this.value;
+            }
+        });
     }
     </script>
 

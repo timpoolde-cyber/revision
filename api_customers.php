@@ -18,15 +18,6 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('PRAGMA journal_mode=WAL');
 
-    // Automatisches Schema-Update
-    $columns = $pdo->query("PRAGMA table_info(customers)")->fetchAll(PDO::FETCH_COLUMN, 1);
-    $missing = ['phone_mobile', 'phone_fixed', 'city', 'postal_code'];
-    foreach ($missing as $col) {
-        if (!in_array($col, $columns)) {
-            $pdo->exec("ALTER TABLE customers ADD COLUMN $col TEXT DEFAULT ''");
-        }
-    }
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
 

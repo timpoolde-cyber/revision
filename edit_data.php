@@ -20,23 +20,6 @@ $dbPath = __DIR__ . '/data/rockets.db';
 $db = new PDO('sqlite:' . $dbPath);
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Sicherstellen, dass die Kontakttabelle existiert
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS project_contacts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        email TEXT,
-        phone_mobile TEXT,
-        is_default INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(project_id) REFERENCES projects(id)
-    )");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_project_contacts_project ON project_contacts(project_id, is_default)");
-} catch (Exception $e) {
-    error_log("Database table creation error: " . $e->getMessage());
-}
-
 // 4. Projekt-ID validieren
 $id = $_GET['id'] ?? null;
 if (!$id) {

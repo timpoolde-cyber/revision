@@ -40,6 +40,8 @@ try {
         longitude TEXT,
         secret_token TEXT,
         token_expires DATETIME,
+        token_created_at DATETIME DEFAULT NULL,
+        token_used_at DATETIME DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -54,6 +56,14 @@ try {
         next_steps TEXT,
         last_score INTEGER,
         updated_at DATETIME,
+        secret_token TEXT,
+        budget REAL DEFAULT 0.0,
+        phase_1_initiated_at DATETIME,
+        phase_2_evaluated_at DATETIME,
+        phase_3_contacted_at DATETIME,
+        phase_4_engaged_at DATETIME,
+        phase_5_implemented_at DATETIME,
+        phase_6_closed_at DATETIME,
         FOREIGN KEY(customer_id) REFERENCES customers(id)
     )");
 
@@ -78,6 +88,8 @@ try {
         seo_score INTEGER,
         raw_response LONGTEXT,
         error_message TEXT,
+        report_quick_json TEXT,
+        report_deep TEXT,
         fetch_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(project_id) REFERENCES projects(id)
     )");
@@ -87,9 +99,20 @@ try {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         project_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        role TEXT,
         email TEXT,
         phone_mobile TEXT,
         is_default INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(project_id) REFERENCES projects(id)
+    )");
+
+    // Tabelle: email_templates
+    $db->exec("CREATE TABLE IF NOT EXISTS email_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        content TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(project_id) REFERENCES projects(id)
     )");

@@ -57,7 +57,7 @@ function formatPhoneNumberAPI($phone) {
 // Hilfsfunktion: Email versendet
 function sendEmail($to, $subject, $body, $from = null, $attachment = null) {
     if (!$from) {
-        $from = getenv('ADMIN_EMAIL') ?: 'noreply@revision100.de';
+        $from = getenv('ADMIN_EMAIL') ?: 'r400@revision100.de';
     }
 
     $headers = "From: {$from}\r\n";
@@ -262,60 +262,6 @@ function calculatePhaseStatus($projectId, $db, $timeZone = 'Europe/Berlin') {
         return ['phase' => null, 'color' => 'gray', 'secondsRemaining' => null];
     }
 }
-
-// Ensure required tables and columns exist
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS psi_results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_id INTEGER NOT NULL,
-        strategy TEXT NOT NULL,
-        performance_score INTEGER,
-        accessibility_score INTEGER,
-        best_practices_score INTEGER,
-        seo_score INTEGER,
-        raw_response LONGTEXT,
-        error_message TEXT,
-        fetch_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(project_id) REFERENCES projects(id)
-    )");
-} catch (Exception $e) {}
-
-// Add token columns to customers if they don't exist
-try {
-    $db->exec("ALTER TABLE customers ADD COLUMN token_created_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE customers ADD COLUMN token_used_at DATETIME");
-} catch (Exception $e) {}
-
-// Add last_interaction_date to projects if needed (virtual column via query)
-// No ALTER needed - we calculate it via subquery
-
-// Add phase columns to projects if they don't exist
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_1_initiated_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_2_evaluated_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_3_contacted_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_4_engaged_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_5_implemented_at DATETIME");
-} catch (Exception $e) {}
-
-try {
-    $db->exec("ALTER TABLE projects ADD COLUMN phase_6_closed_at DATETIME");
-} catch (Exception $e) {}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -695,25 +641,6 @@ if ($method === 'POST') {
 
     if ($action === 'run_psi_now') {
         try {
-            // Ensure psi_results table exists
-            try {
-                $db->exec("CREATE TABLE IF NOT EXISTS psi_results (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER NOT NULL,
-                    strategy TEXT NOT NULL,
-                    performance_score INTEGER,
-                    accessibility_score INTEGER,
-                    best_practices_score INTEGER,
-                    seo_score INTEGER,
-                    raw_response LONGTEXT,
-                    error_message TEXT,
-                    fetch_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(project_id) REFERENCES projects(id)
-                )");
-            } catch (Exception $e) {
-                // Table might already exist, continue
-            }
-
             $projectId = $input['project_id'] ?? null;
             if (!$projectId) {
                 echo json_encode(['success' => false, 'error' => 'Projekt ID erforderlich']);
