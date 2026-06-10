@@ -43,7 +43,33 @@ function json_response(array $data, int $code = 200): void {
     exit;
 }
 
+function is_private_ip(string $ip): bool {
+    $ip = trim($ip);
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        return false;
+    }
+    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+}
+
 function http_get(string $url, int $timeout = 30): ?string {
+    $parsed = parse_url($url);
+    if (!$parsed || !isset($parsed['host'])) {
+        error_log('[r400] invalid url: ' . $url);
+        return null;
+    }
+
+    $host = $parsed['host'];
+    $ips = @gethostbyname($host);
+    if ($ips === false || $ips === $host) {
+        error_log('[r400] dns resolution failed: ' . $host);
+        return null;
+    }
+
+    if (is_private_ip($ips)) {
+        error_log('[r400] blocked private ip: ' . $ips . ' for host: ' . $host);
+        return null;
+    }
+
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -84,6 +110,27 @@ function http_post(string $url, array $headers, string $body, int $timeout = 30)
 
 function clamp_score(mixed $v): int {
     return (int)round(max(0.0, min(1.0, (float)$v)) * 100);
+}
+
+// Telefonnummern-Formatierung Funktion
+function format_phone_number(string $value): string {
+    if (empty($value)) return '';
+
+    // Entferne Leerzeichen, Trennstriche, Schrägstriche
+    $cleaned = preg_replace('/[\s\-\/]/', '', $value);
+
+    // Wenn mit '00' beginnt: ersetze durch '+'
+    if (strpos($cleaned, '00') === 0) {
+        $cleaned = '+' . substr($cleaned, 2);
+    }
+    // Wenn mit einzelner '0' beginnt: ersetze durch '+49'
+    else if (strpos($cleaned, '0') === 0) {
+        $cleaned = '+49' . substr($cleaned, 1);
+    }
+    // Wenn bereits mit '+' beginnt: unverändert
+    // (keine weitere Aktion nötig)
+
+    return $cleaned;
 }
 
 // ===== ki-score heuristik =====
@@ -256,7 +303,7 @@ function db_update_project_phase(PDO $db, int $project_id, string $phase): void 
 }
 
 // ===== routing =====
-$token = $_GET['token'] ?? null;
+$token = $_GET['t'] ?? $_GET['token'] ?? null;
 $method = $_SERVER['REQUEST_METHOD'];
 $db = db_conn($cfg['db_path']);
 
@@ -277,6 +324,18 @@ if ($token) {
     }
 }
 
+// GET-basierter Opt-Out Handler: Direkte DB-Update mit secret_token
+if ($method === 'GET' && $token && isset($_GET['action']) && $_GET['action'] === 'optout') {
+    try {
+        $stmt = $db->prepare('UPDATE projects SET tunnel = ? WHERE id = (SELECT p.id FROM projects p JOIN customers c ON p.customer_id = c.id WHERE c.secret_token = ? LIMIT 1)');
+        $stmt->execute(['abgeschaltet', $token]);
+        header('Location: ?t=' . urlencode($token), true, 303);
+        exit;
+    } catch (Throwable $ex) {
+        error_log('[r400] optout error: ' . $ex->getMessage());
+    }
+}
+
 // form submission
 if ($method === 'POST' && $token && isset($_POST['action']) && $_POST['action'] === 'deactivate_notifications') {
     if ($project && $project['pid']) {
@@ -290,20 +349,75 @@ if ($method === 'POST' && $token && isset($_POST['action']) && $_POST['action'] 
     }
 }
 
+// GET-basierter Optout via Link
+if ($method === 'GET' && $token && isset($_GET['action']) && $_GET['action'] === 'optout') {
+    if ($project && $project['pid']) {
+        try {
+            db_update_project_phase($db, $project['pid'], 'abgeschaltet');
+            header('Location: ' . $_SERVER['REQUEST_URI'], true, 303);
+            exit;
+        } catch (Throwable $ex) {
+            error_log('[r400] optout error: ' . $ex->getMessage());
+        }
+    }
+}
+
 // form submission
 if ($method === 'POST' && !$token) {
     $url = trim($_POST['url'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    $contact_primary = trim($_POST['contact_primary'] ?? $_POST['email'] ?? '');
+    $contact_secondary = trim($_POST['contact_secondary'] ?? $_POST['phone'] ?? '');
     $name = trim($_POST['name'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
 
-    if (!$url || !$email) {
-        json_response(['ok' => false, 'error' => 'url und email erforderlich'], 400);
+    if (!$url || !$contact_primary) {
+        json_response(['ok' => false, 'error' => 'url und primärer kontakt erforderlich'], 400);
+    }
+
+    // URL-Toleranz: Fehlender Protokoll-Prefix hinzufügen
+    if (!empty($url) && strpos($url, 'http') === false) {
+        $url = 'https://' . $url;
     }
 
     if (!preg_match('#^https?://#i', $url)) {
         $url = 'https://' . $url;
     }
+
+    // Intelligente Feldidentifikation (Strenge Regel: Startet mit Ziffer/+/ → Telefon, enthält @ → E-Mail)
+    $email = '';
+    $phone = '';
+
+    $primary_starts_with_digit = preg_match('/^[\d+\/]/', $contact_primary);
+    $primary_has_at_sign = strpos($contact_primary, '@') !== false;
+
+    if ($primary_has_at_sign) {
+        // Primary ist E-Mail
+        $email = $contact_primary;
+        if (!empty($contact_secondary)) {
+            $phone = $contact_secondary;
+        }
+    } else if ($primary_starts_with_digit) {
+        // Primary ist Telefon
+        $phone = $contact_primary;
+        if (!empty($contact_secondary)) {
+            $email = $contact_secondary;
+        }
+    } else {
+        // Fallback: Primary als E-Mail
+        $email = $contact_primary;
+        if (!empty($contact_secondary)) {
+            $phone = $contact_secondary;
+        }
+    }
+
+    if (empty($email)) {
+        json_response(['ok' => false, 'error' => 'gültige email erforderlich'], 400);
+    }
+
+    // Formatiere Telefonnummer ins internationale Format
+    if (!empty($phone)) {
+        $phone = format_phone_number($phone);
+    }
+
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
         json_response(['ok' => false, 'error' => 'ungültige url'], 400);
     }
@@ -407,6 +521,14 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 .footer{text-align:center;font-size:11px;color:var(--di);margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
 .footer a{color:var(--gr);text-decoration:none}
 .footer a:hover{text-decoration:underline}
+.vip-pending-container{max-width:600px;margin:40px auto;font-family:monospace;color:#ffffff;line-height:1.6}
+.vip-title{font-size:14px;font-weight:700;letter-spacing:1px;margin-bottom:24px;color:#ffffff}
+.vip-msg-grey{color:#777777;margin-bottom:8px}
+.vip-msg-white{color:#ffffff;margin-bottom:24px}
+.vip-status-badge{display:inline-block;border:1px solid #333333;padding:6px 12px;font-size:11px;color:#00FF66;text-transform:lowercase}
+.vip-action-section{margin-top:60px;border-top:1px solid #222222;padding-top:16px}
+.vip-btn-optout{color:#555555;text-decoration:none;font-size:11px;transition:color 0.2s ease}
+.vip-btn-optout:hover{color:#ff3333}
 </style>
 </head>
 <body>
@@ -423,24 +545,26 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
     </div>
 
     <form method="post" onsubmit="return submitForm(event)" id="auditForm">
-        <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" style="font-weight: bold; text-transform: uppercase;">WEBSITE *</label>
-            <input type="url" name="url" class="form-input required" required placeholder="z.b. example.de" autocomplete="url" style="width: 100%; display: block;">
-        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: bold; text-transform: uppercase;">WEBSITE *</label>
+                <input type="text" id="url_field" name="url" class="form-input required" required placeholder="z.b. example.de" autocomplete="url" style="width: 100%; display: block;">
+            </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" style="font-weight: bold; text-transform: uppercase;">MAIL oder MOBILE *</label>
-            <input type="text" name="contact" class="form-input required" required placeholder="damit ich dich erreichen kann" style="width: 100%; display: block;">
-        </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: bold; text-transform: uppercase;">MAIL oder MOBILE *</label>
+                <input type="text" id="contact_primary" name="contact_primary" class="form-input required" required placeholder="damit ich dich erreichen kann" style="width: 100%; display: block;">
+            </div>
 
-        <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" style="text-transform: uppercase;">NAME</label>
-            <input type="text" name="name" class="form-input optional" placeholder="optional" autocomplete="name" style="width: 100%; display: block;">
-        </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="text-transform: uppercase;">NAME</label>
+                <input type="text" id="customer_name" name="customer_name" class="form-input optional" placeholder="optional" autocomplete="name" style="width: 100%; display: block;">
+            </div>
 
-        <div class="form-group" style="margin-bottom: 24px;">
-            <label class="form-label" style="text-transform: uppercase;">TELEFON</label>
-            <input type="tel" name="phone" class="form-input optional" placeholder="optional" autocomplete="tel" style="width: 100%; display: block;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" id="contact_secondary_label" style="text-transform: uppercase;">MOBILNUMMER (OPTIONAL)</label>
+                <input type="text" id="contact_secondary" name="contact_secondary" class="form-input optional" placeholder="+49 123 456789" autocomplete="tel" style="width: 100%; display: block;">
+            </div>
         </div>
 
         <button type="submit" class="btn" id="submitBtn" style="width: 100%; text-transform: uppercase;">[ CHECK STARTEN → ]</button>
@@ -453,38 +577,40 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 
 <?php elseif ($project['tunnel'] === 'anfrage'): ?>
 
-<div class="section">
-    <div class="title">PORTAL — STATE 1 // PENDING</div>
+<div class="vip-pending-container">
 
-    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
-        // deine anfrage ist eingegangen.<br>
+    <div class="vip-title">PORTAL — STATE 1 // PENDING</div>
+
+    <div class="vip-msg-grey">// deine anfrage ist eingegangen.</div>
+
+    <div class="vip-msg-white">
         die analyse läuft.<br>
         du bekommst eine nachricht sobald<br>
         die ersten werte vorliegen.
     </div>
 
-    <div class="status-badge" style="font-size: 11px; color: var(--di); text-transform: uppercase; margin-bottom: 32px;">
-        status: wird bearbeitet
-    </div>
+    <div class="vip-status-badge">status: wird bearbeitet</div>
 
-    <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
-        <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
-            // benachrichtigungen abschalten →
+    <div class="vip-action-section">
+        <a href="?t=<?php echo htmlspecialchars($token); ?>&action=optout" class="vip-btn-optout">
+            // benachrichtigungen abschalten &rarr;
         </a>
     </div>
+
 </div>
 
 <?php elseif ($project['tunnel'] === 'abgeschaltet'): ?>
 
-<div class="section">
-    <div class="title">PORTAL — STATE 4 // BENACHRICHTIGUNGEN AUS</div>
+<div class="vip-pending-container">
 
-    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
-        // benachrichtigungen deaktiviert.<br>
-        dein befund liegt im portal bereit.<br>
-        wenn du ihn besprechen möchtest,<br>
-        ruf mich an.
+    <div class="vip-title">PORTAL — STATE // TERMINATED</div>
+
+    <div class="vip-msg-grey">// prozess auf deinen wunsch beendet.</div>
+
+    <div class="vip-msg-white">
+        es werden keine daten mehr verarbeitet.
     </div>
+
 </div>
 
 <?php elseif ($project['tunnel'] === 'bewertet' && $psi): ?>
@@ -572,26 +698,136 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 </div>
 
 <script>
+// Telefonnummern-Formatierung: Konvertiere zu internationalem Format (+49...)
+function formatPhoneNumber(value) {
+    if (!value) return '';
+
+    // Entferne Leerzeichen, Trennstriche, Schrägstriche
+    let cleaned = value.replace(/[\s\-\/]/g, '');
+
+    // Wenn mit '00' beginnt: ersetze durch '+'
+    if (cleaned.startsWith('00')) {
+        cleaned = '+' + cleaned.substring(2);
+    }
+    // Wenn mit einzelner '0' beginnt: ersetze durch '+49'
+    else if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
+        cleaned = '+49' + cleaned.substring(1);
+    }
+    // Wenn bereits mit '+' beginnt: unverändert
+    else if (cleaned.startsWith('+')) {
+        // Unverändert
+    }
+
+    return cleaned;
+}
+
+// Chamäleon-Feld: contact_secondary mutiert basierend auf contact_primary (Nur Label/Placeholder)
+const contactPrimaryInput = document.getElementById('contact_primary');
+const contactSecondaryLabel = document.getElementById('contact_secondary_label');
+const contactSecondaryInput = document.getElementById('contact_secondary');
+
+function updateSecondaryFieldLabel() {
+    if (!contactPrimaryInput || !contactSecondaryLabel || !contactSecondaryInput) return;
+
+    const value = contactPrimaryInput.value.trim();
+
+    // Telefon erkannt: Startet mit Ziffer, '+' oder '/'
+    if (/^\d/.test(value) || /^\+/.test(value) || /^\//.test(value)) {
+        contactSecondaryLabel.textContent = 'E-Mail-Adresse (optional)';
+        contactSecondaryInput.placeholder = 'name@unternehmen.de';
+        contactSecondaryInput.autocomplete = 'email';
+    }
+    // E-Mail erkannt: Enthält '@'
+    else if (/@/.test(value)) {
+        contactSecondaryLabel.textContent = 'Mobilnummer (optional)';
+        contactSecondaryInput.placeholder = '+49 123 456789';
+        contactSecondaryInput.autocomplete = 'tel';
+    }
+    // Standard: Mobilnummer
+    else {
+        contactSecondaryLabel.textContent = 'Mobilnummer (optional)';
+        contactSecondaryInput.placeholder = '+49 123 456789';
+        contactSecondaryInput.autocomplete = 'tel';
+    }
+}
+
+// Event-Listener auf mehrere Events: input, change, blur, keyup
+if (contactPrimaryInput) {
+    ['input', 'change', 'blur', 'keyup'].forEach(event => {
+        contactPrimaryInput.addEventListener(event, updateSecondaryFieldLabel);
+    });
+
+    // Formatierung für contact_primary bei blur (wenn Telefon)
+    contactPrimaryInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        if (value && (/^\d/.test(value) || /^\+/.test(value) || /^\//.test(value))) {
+            this.value = formatPhoneNumber(value);
+        }
+    });
+}
+
+// Formatierung für contact_secondary bei blur (wenn Telefon)
+if (contactSecondaryInput) {
+    contactSecondaryInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        // Formatiere nur wenn aktuell als Telefon fungierend
+        const primaryValue = contactPrimaryInput?.value.trim() || '';
+        const primaryIsEmail = /@/.test(primaryValue);
+        if (value && primaryIsEmail) {
+            this.value = formatPhoneNumber(value);
+        }
+    });
+}
+
+// URL-Toleranz: Protokoll-Prefix hinzufügen bei blur
+const urlField = document.getElementById('url_field');
+if (urlField) {
+    urlField.addEventListener('blur', function() {
+        if (this.value && !this.value.match(/^https?:\/\//i)) {
+            this.value = 'https://' + this.value;
+        }
+    });
+}
+
 async function submitForm(e) {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = 'wird verarbeitet...';
 
-    const contact = document.querySelector('input[name="contact"]').value.trim();
+    const url = document.getElementById('url_field').value.trim();
+    const contact_primary = document.getElementById('contact_primary').value.trim();
+    const customer_name = document.getElementById('customer_name').value.trim();
+    const contact_secondary = document.getElementById('contact_secondary').value.trim();
+
     let email = '';
     let phone = '';
 
-    if (contact.includes('@')) {
-        email = contact;
+    // Intelligente Feldidentifikation: Startet mit Ziffer/+/ → Telefon, enthält @ → E-Mail
+    const primaryStartsWithDigit = /^[\d+\/]/.test(contact_primary);
+    const primaryHasAtSign = /@/.test(contact_primary);
+
+    if (primaryHasAtSign) {
+        email = contact_primary;
+        if (contact_secondary) phone = contact_secondary;
+    } else if (primaryStartsWithDigit) {
+        phone = contact_primary;
+        if (contact_secondary) email = contact_secondary;
     } else {
-        phone = contact;
+        email = contact_primary;
+        if (contact_secondary) phone = contact_secondary;
     }
 
     const fd = new FormData(document.getElementById('auditForm'));
+    fd.set('url', url);
     fd.set('email', email);
     fd.set('phone', phone);
-    fd.delete('contact');
+    fd.set('name', customer_name);
+    fd.delete('contact_primary');
+    fd.delete('contact_secondary');
+    fd.delete('customer_name');
+    fd.delete('url_field');
+
     try {
         const res = await fetch('', { method: 'POST', body: fd });
         const json = await res.json();
@@ -628,6 +864,16 @@ async function deactivateNotifications(e) {
         console.error('Fehler:', error);
     }
     return false;
+}
+
+// URL-Toleranz: Protokoll-Prefix hinzufügen bei blur
+const urlInput = document.querySelector('input[name="url"]');
+if (urlInput) {
+    urlInput.addEventListener('blur', function() {
+        if (this.value && !this.value.match(/^https?:\/\//i)) {
+            this.value = 'https://' + this.value;
+        }
+    });
 }
 </script>
 
