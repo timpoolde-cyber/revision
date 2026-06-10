@@ -103,12 +103,7 @@
 </head>
 <body>
 
-<header>
-  <div class="brand-container">
-    <div class="brand"><span class="brand-name">Revision100™</span></div>
-    <div id="statusSquares" class="status-squares"></div>
-  </div>
-</header>
+<?php include __DIR__ . '/header.tpl.php'; ?>
 
 <div class="crm-layout">
   <?php include __DIR__ . '/nav.tpl.php'; ?>

@@ -1,4 +1,19 @@
-<!DOCTYPE html>
+<?php
+// VIP-Kanal-Erkennung für Infobox
+$current_tunnel = $project['tunnel'] ?? 'standard';
+$is_vip_channel = in_array($current_tunnel, ['vip', 'anfrage', 'abgeschaltet']);
+$is_terminated = $current_tunnel === 'abgeschaltet';
+$tunnel_labels = [
+    'vip' => 'VIP-Kanal',
+    'anfrage' => 'Anfrage',
+    'bewertet' => 'Bewertet',
+    'bereit' => 'Bereit',
+    'kontakt' => 'Kontakt',
+    'abgeschlossen' => 'Abgeschlossen',
+    'abgeschaltet' => 'Terminated',
+];
+$tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
+?><!DOCTYPE html>
 <html lang="de">
 <head>
 
@@ -8,7 +23,7 @@
   <link rel="stylesheet" href="style-crm.css">
   <script src="../crm-functions.js"></script>
   <style>
-    
+
     .btn-square { width: 48px; min-width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; border: 1px solid #000; cursor: pointer; font-family: var(--font-mono); flex-shrink: 0; }
     .btn-square:hover { background: #333; }
 
@@ -30,19 +45,21 @@
     .action-btn-square.lh-square.yellow { background: #FF9529; color: #fff; }
     .action-btn-square.lh-square.orange { background: #FF9529; color: #fff; }
     .action-btn-square.lh-square.red { background: #FF3131; color: #fff; }
-    
+
     #sendTokenBtn { background: #000; color: #fff; font-size: 32px; }
+
+    /* VIP-Infobox Styling */
+    .vip-infobox { border: 1px solid #000; padding: 14px; background: #fafafa; margin-bottom: 20px; }
+    .vip-infobox-row { display: flex; gap: 16px; align-items: baseline; margin-bottom: 8px; font-family: var(--font-mono); font-size: 12px; }
+    .vip-infobox-label { font-weight: bold; text-transform: uppercase; color: #000; min-width: 80px; }
+    .vip-infobox-value { color: #00FF66; }
+    .vip-infobox-value.terminated { color: #888; }
 
   </style>
 </head>
 <body>
 
-<header>
-  <div class="brand-container">
-    <div class="brand"><span class="brand-name">Revision100™</span></div>
-    <div id="statusSquares" class="status-squares"></div>
-  </div>
-</header>
+<?php include __DIR__ . '/header.tpl.php'; ?>
 
 <div class="crm-layout">
   <?php include __DIR__ . '/nav.tpl.php'; ?>
@@ -50,6 +67,19 @@
 
 <div class="container">
   <div class="content"><div class="section-title">PROJEKT: <?= htmlspecialchars($project['target_url']) ?></div>
+
+    <?php if ($is_vip_channel): ?>
+    <div class="vip-infobox">
+      <div class="vip-infobox-row">
+        <span class="vip-infobox-label">KANAL:</span>
+        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>">VIP-TUNNEL<?php echo $is_terminated ? ' (TERMINATED)' : ''; ?></span>
+      </div>
+      <div class="vip-infobox-row">
+        <span class="vip-infobox-label">STATUS:</span>
+        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>"><?php echo htmlspecialchars($tunnel_display); ?></span>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="action-row" style="display: flex; gap: 24px; margin: 0 0 20px 0; padding: 0;">
       <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">

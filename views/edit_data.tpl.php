@@ -1,4 +1,19 @@
-<!DOCTYPE html>
+<?php
+// VIP-Kanal-Erkennung für Infobox
+$current_tunnel = $project['tunnel'] ?? 'standard';
+$is_vip_channel = in_array($current_tunnel, ['vip', 'anfrage', 'abgeschaltet']);
+$is_terminated = $current_tunnel === 'abgeschaltet';
+$tunnel_labels = [
+    'vip' => 'VIP-Kanal',
+    'anfrage' => 'Anfrage',
+    'bewertet' => 'Bewertet',
+    'bereit' => 'Bereit',
+    'kontakt' => 'Kontakt',
+    'abgeschlossen' => 'Abgeschlossen',
+    'abgeschaltet' => 'Terminated',
+];
+$tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
+?><!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -55,16 +70,18 @@
       background-color: #f5f5f5 !important;
     }
 
+    /* VIP-Infobox Styling */
+    .vip-infobox { border: 1px solid #000; padding: 14px; background: #fafafa; margin-bottom: 20px; }
+    .vip-infobox-row { display: flex; gap: 16px; align-items: baseline; margin-bottom: 8px; font-family: var(--font-mono); font-size: 12px; }
+    .vip-infobox-label { font-weight: bold; text-transform: uppercase; color: #000; min-width: 80px; }
+    .vip-infobox-value { color: #00FF66; }
+    .vip-infobox-value.terminated { color: #888; }
+
   </style>
 </head>
 <body>
 
-<header>
-  <div class="brand-container">
-    <div class="brand"><span class="brand-name">Revision100™</span></div>
-    <div id="statusSquares" class="status-squares"></div>
-  </div>
-</header>
+<?php include __DIR__ . '/header.tpl.php'; ?>
 
 <div class="crm-layout">
   <?php include __DIR__ . '/nav.tpl.php'; ?>
@@ -74,7 +91,20 @@
   <div class="content">
 
     <div class="section-title">Projektdaten</div>
-      
+
+    <?php if ($is_vip_channel): ?>
+    <div class="vip-infobox">
+      <div class="vip-infobox-row">
+        <span class="vip-infobox-label">KANAL:</span>
+        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>">VIP-TUNNEL<?php echo $is_terminated ? ' (TERMINATED)' : ''; ?></span>
+      </div>
+      <div class="vip-infobox-row">
+        <span class="vip-infobox-label">STATUS:</span>
+        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>"><?php echo htmlspecialchars($tunnel_display); ?></span>
+      </div>
+    </div>
+    <?php endif; ?>
+
       <div class="form-group" style="background: #fafafa; padding: 14px; border: 1px dashed #000; margin-bottom: 24px;">
         <label class="form-label" style="color: #000; display: flex; align-items: center; gap: 6px;">
           ⚡ Google Firmensuche (Ausfüllhilfe)
