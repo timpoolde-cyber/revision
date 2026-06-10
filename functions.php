@@ -21,3 +21,5 @@ function sendTelegramMessage($message) {
     
     return $result;
 }
+
+require_once __DIR__ . '/r400_status.php';

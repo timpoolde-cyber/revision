@@ -21,7 +21,7 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projekt: <?= htmlspecialchars($project['target_url']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
-  <script src="../crm-functions.js"></script>
+  <link rel="stylesheet" href="r400-status.css">
   <style>
 
     .btn-square { width: 48px; min-width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; border: 1px solid #000; cursor: pointer; font-family: var(--font-mono); flex-shrink: 0; }
@@ -312,8 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const currentPhase = '<?= htmlspecialchars($project['tunnel']) ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-  const container = document.getElementById('statusSquares');
-  container.innerHTML = window.renderPhaseSquares(currentPhase, lastInteractionDate).html;
 
   const lastScore = <?= $project['last_score'] !== null ? $project['last_score'] : 'null' ?>;
   if (lastScore !== null) {

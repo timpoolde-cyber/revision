@@ -1,25 +1,14 @@
 <?php
-// Globale Header-Datei mit VIP-Kanal-Routing
-// Wird auf allen CRM-Innenseiten eingebunden
-
-// VIP-Kanal-Erkennung
-$current_tunnel = $project['tunnel'] ?? ($tunnel ?? 'standard');
-$is_vip_channel = in_array($current_tunnel, ['vip', 'anfrage', 'abgeschaltet']);
-$is_terminated = $current_tunnel === 'abgeschaltet';
+// Globaler Header der CRM-Innenseiten — R400 Status-Cockpit
+$r4_states = (isset($db) && isset($project) && is_array($project))
+    ? r400_stage_states_for_project($db, $project)
+    : r400_stage_states($project ?? []);
 ?>
 
 <header>
   <div class="brand-container">
-    <div class="brand"><span class="brand-name">Revision100™</span></div>
-
-    <?php if ($is_vip_channel): ?>
-      <!-- VIP-Kanal: Zeige neuen Status-Header -->
-      <div class="vip-header-display" style="<?php echo $is_terminated ? 'opacity: 0.6;' : ''; ?>">
-        <?php include __DIR__ . '/../flow/vip/snippet_status_vip_header.php'; ?>
-      </div>
-    <?php else: ?>
-      <!-- Standard-Kanal: Zeige altes VisionControl -->
-      <div id="statusSquares" class="status-squares"></div>
-    <?php endif; ?>
+    <div class="brand"><span class="brand-name">R400™</span></div>
+    <?php r400_status_sprite(); ?>
+    <?php echo r400_status_cockpit($r4_states, 'header'); ?>
   </div>
 </header>

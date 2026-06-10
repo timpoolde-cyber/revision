@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Email: <?= htmlspecialchars($project['customer_name']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
-  <script src="../crm-functions.js"></script>
+  <link rel="stylesheet" href="r400-status.css">
   <style>
     .container { background: #fff; padding: 0; }
     .content { padding: 16px 20px; margin: 0; display: flex; flex-direction: column; gap: 24px; }
@@ -348,8 +348,6 @@ async function deleteSelectedTemplate() {
 document.addEventListener('DOMContentLoaded', () => {
   const tunnel = '<?= htmlspecialchars($project['tunnel']) ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-  const container = document.getElementById('statusSquares');
-  container.innerHTML = window.renderPhaseSquares(tunnel, lastInteractionDate).html;
 
   updatePreview();
   loadTemplates();

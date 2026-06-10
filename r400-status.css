@@ -1,0 +1,60 @@
+/* r400-status.css — Zentrales Status-Cockpit
+   Eine Datei für Header (Innenseiten) und Karten (crm.php).
+   Farbe läuft über --c je Zustand; Strichstärke bleibt per non-scaling-stroke
+   in jeder Größe konstant. */
+
+.r4-cockpit {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.r4ic {
+  --c: #c4c4c4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--c);
+  line-height: 0;
+}
+
+.r4ic__icon {
+  display: block;
+  width: var(--r4-size, 28px);
+  height: calc(var(--r4-size, 28px) * 1.375);
+  stroke-width: 1.6;
+  overflow: visible;
+}
+/* Strich bleibt überall gleich dünn, egal wie klein skaliert wird */
+.r4ic__icon * { vector-effect: non-scaling-stroke; }
+
+.r4ic__label {
+  font-size: 8px;
+  letter-spacing: 0.3px;
+  text-transform: lowercase;
+  color: currentColor;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Zustände ── */
+.r4ic--grau    { --c: #c4c4c4; }
+.r4ic--schwarz { --c: #111111; }
+.r4ic--gruen   { --c: #16c784; }
+.r4ic--rot     { --c: #e5544b; }
+.r4ic--faellig { --c: #e5544b; animation: r4blink 1.1s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .r4ic--faellig { animation: none; }
+}
+@keyframes r4blink { 50% { opacity: 0.32; } }
+
+/* ── Varianten ── */
+.r4-cockpit--header { --r4-size: 18px; gap: 5px; }
+.r4-cockpit--card   { --r4-size: 30px; gap: 8px; }
+.r4-cockpit--card .r4ic__label { font-size: 9px; }
+
+/* Optional: Labels im Header ausblenden, wenn es eng wird
+.r4-cockpit--header .r4ic__label { display: none; } */

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Rechnungs-Zentrale (INV) — <?= htmlspecialchars($project['customer_name']) ?></title>
   <link rel="stylesheet" href="../style-crm.css">
-  <script src="../crm-functions.js"></script>
   <style>
 
     .container { background: #fff; padding: 0; }
@@ -290,9 +289,6 @@ async function generateAndSendInvoice() {
 document.addEventListener('DOMContentLoaded', () => {
   const currentPhase = '<?= htmlspecialchars($project['tunnel'] ?? 'anfrage') ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-  const container = document.getElementById('statusSquares');
-  if (container) {
-    container.innerHTML = window.renderPhaseSquares(currentPhase, lastInteractionDate).html;
   }
 
   updateInvoicePreview();

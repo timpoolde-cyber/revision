@@ -351,13 +351,15 @@ if ($method === 'GET') {
             SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
                    p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
                    p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
-                   c.email, c.customer_name,
+                   c.email, c.phone_mobile,
                    (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                    (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                    (SELECT performance_score FROM psi_results WHERE project_id = p.id AND strategy = 'mobile' ORDER BY fetch_timestamp DESC LIMIT 1) as psi_mobile_score,
                    IFNULL(c.token_created_at, '') as token_created_at,
                    IFNULL(c.token_used_at, '') as token_used_at,
-                   (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name
+                   (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name,
+                   (SELECT MAX(CASE WHEN report_quick_json IS NOT NULL AND report_quick_json <> '' THEN 1 ELSE 0 END) FROM psi_results WHERE project_id = p.id) AS has_quick,
+                   (SELECT MAX(CASE WHEN report_deep IS NOT NULL AND report_deep <> '' THEN 1 ELSE 0 END) FROM psi_results WHERE project_id = p.id) AS has_deep
             FROM projects p
             LEFT JOIN customers c ON p.customer_id = c.id
             ORDER BY p.updated_at DESC
@@ -381,13 +383,15 @@ if ($method === 'GET') {
                 SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
                        p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
                        p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
-                       c.email, c.customer_name,
+                       c.email, c.phone_mobile,
                        (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                        (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                        NULL as psi_mobile_score,
                        IFNULL(c.token_created_at, '') as token_created_at,
                        IFNULL(c.token_used_at, '') as token_used_at,
-                       (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name
+                       (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name,
+                       0 AS has_quick,
+                       0 AS has_deep
                 FROM projects p
                 LEFT JOIN customers c ON p.customer_id = c.id
                 ORDER BY p.updated_at DESC

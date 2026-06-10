@@ -20,7 +20,7 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Projektdaten: <?= htmlspecialchars($project['customer_name']) ?></title>
   <link rel="stylesheet" href="style-crm.css">
-  <script src="../crm-functions.js"></script>
+  <link rel="stylesheet" href="r400-status.css">
   <style>
     .btn { background: #000; color: #fff; border: 1px solid #000; padding: 10px 16px; font-family: var(--font-mono); font-weight: bold; text-transform: uppercase; cursor: pointer; }
     .btn:hover { background: #333; }
@@ -376,9 +376,6 @@ document.querySelectorAll('.phone-input').forEach(input => {
 window.addEventListener('DOMContentLoaded', () => {
   const currentPhase = '<?= htmlspecialchars($project['tunnel']) ?>';
   const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-  const container = document.getElementById('statusSquares');
-  if (container) {
-    container.innerHTML = window.renderPhaseSquares(currentPhase, lastInteractionDate).html;
   }
 });
 </script>

@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Revision100™ — System-Zentrale</title>
   <link rel="stylesheet" href="style-crm.css">
+  <link rel="stylesheet" href="r400-status.css">
   <link rel="stylesheet" href="print.css">
-  <script src="../crm-functions.js"></script>
+  <script src="../r400-status.js"></script>
 </head>
 <body class="crm-body">
 
 <header>
   <div class="brand-container">
-    <div class="brand"><span class="brand-name">Revision100™</span></div>
-    <div id="statusSquares" class="status-squares"></div>
+    <div class="brand"><span class="brand-name">R400™</span></div>
+    <?php r400_status_sprite(); ?>
   </div>
 </header>
 
@@ -270,15 +271,15 @@ function formatTokenDate(dateStr) {
 function getTokenStatus(token_created_at, token_used_at, tunnel) {
   if (!token_created_at) return { status: 'none', date: '', color: '' };
   if (token_used_at) {
-    return { status: 'used', date: formatTokenDate(token_used_at), color: '#FFB3B3' };
+    return { status: 'used', date: formatTokenDate(token_used_at), color: '#16c784' };
   }
   const created = new Date(token_created_at);
   const now = new Date();
   const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
   if (days > 5) {
-    return { status: 'invalid', date: formatTokenDate(token_created_at), color: '#D3D3D3' };
+    return { status: 'invalid', date: formatTokenDate(token_created_at), color: '#d3d3d3' };
   }
-  return { status: 'active', date: formatTokenDate(token_created_at), color: '#a3e4d7' };
+  return { status: 'active', date: formatTokenDate(token_created_at), color: '#e8e8e8' };
 }
 
 function getLHColor(score) {
@@ -314,7 +315,7 @@ function renderCard(l) {
     ${l.budget ? `<div style="font-family:var(--font-mono);font-size:11px;font-weight:bold;margin-bottom:8px;text-transform:uppercase;">Wert: ${parseFloat(l.budget).toLocaleString('de-DE', {style: 'currency', currency: 'EUR'})}</div>` : ''}
 
     <div style="display:flex;gap:4px;margin-bottom:12px;">
-      ${window.renderPhaseSquares(l.current_phase, l.phase_color, l.phase_timeout_seconds).html}
+      ${r4StatusCockpit(r4StageStates(l), 'card')}
     </div>
 
     <div style="display:flex;gap:12px;align-items:start;padding-top:12px;border-top:1px solid #f0f0f0;font-size:12px;">
