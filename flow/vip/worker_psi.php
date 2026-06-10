@@ -10,6 +10,8 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
+$jobStart = microtime(true);
+
 // Logging
 $logFile = __DIR__ . '/worker_psi.log';
 function log_worker(string $msg, string $level = 'INFO'): void {
@@ -59,6 +61,9 @@ function db_conn(string $path): PDO {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     return $pdo;
 }
+
+// ===== LOGGER =====
+require_once dirname(__DIR__, 2) . '/Logger.php';
 
 function db_get_pending_projects(PDO $db): array {
     $stmt = $db->prepare('SELECT id, target_url FROM projects WHERE tunnel = ? ORDER BY id ASC');
@@ -203,10 +208,13 @@ function generate_audit_analysis(array $scores, array $cfg): ?array {
 // ===== MAIN LOOP =====
 try {
     $db = db_conn($cfg['db_path']);
+    Logger::init($db);
     $projects = db_get_pending_projects($db);
 
     if (empty($projects)) {
         log_worker("No pending projects (tunnel='anfrage')");
+        $jobDuration = (microtime(true) - $jobStart) * 1000;
+        Logger::logJobExecution('worker_psi', true, $jobDuration, ['projects_found' => 0]);
         exit(0);
     }
 
@@ -246,9 +254,13 @@ try {
     }
 
     log_worker("=== Worker Complete ===");
+    $jobDuration = (microtime(true) - $jobStart) * 1000;
+    Logger::logJobExecution('worker_psi', true, $jobDuration, ['projects_processed' => count($projects)]);
     exit(0);
 
 } catch (Throwable $ex) {
     log_worker("FATAL: " . $ex->getMessage(), 'FATAL');
+    $jobDuration = (microtime(true) - $jobStart) * 1000;
+    Logger::logJobExecution('worker_psi', false, $jobDuration, ['error' => $ex->getMessage()]);
     exit(1);
 }

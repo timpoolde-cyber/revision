@@ -11,6 +11,8 @@ if (file_exists(__DIR__ . '/.env')) {
     }
 }
 
+require_once __DIR__ . '/Logger.php';
+
 $token = $_GET['token'] ?? '';
 
 if (empty($token)) {
@@ -20,6 +22,7 @@ if (empty($token)) {
 $dbPath = __DIR__ . '/data/rockets.db';
 $db = new PDO('sqlite:' . $dbPath);
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+Logger::init($db);
 
 $stmt = $db->prepare("SELECT c.*, p.id as project_id, p.last_score, p.target_url, p.tunnel FROM customers c JOIN projects p ON c.id = p.customer_id WHERE p.secret_token = ?");
 $stmt->execute([$token]);
@@ -40,8 +43,11 @@ if (isset($data['token_expires']) && !empty($data['token_expires'])) {
 }
 
 if ($tokenExpired) {
+    Logger::logTokenValidation($data['project_id'] ?? 'unknown', false);
     die("Zugriff abgelaufen.");
 }
+
+Logger::logTokenValidation($data['project_id'] ?? 'unknown', true);
 
 // Register token usage
 $stmt = $db->prepare("UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ?");

@@ -1,9 +1,12 @@
 <?php
 // api_client_update.php
+require_once __DIR__ . '/Logger.php';
+
 $dbPath = __DIR__ . '/data/rockets.db';
 try {
     $db = new PDO('sqlite:' . $dbPath);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    Logger::init($db);
 } catch (PDOException $e) {
     die("Datenbankfehler: " . $e->getMessage());
 }
@@ -30,9 +33,12 @@ $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($tokenData && isset($tokenData['token_expires']) && !empty($tokenData['token_expires'])) {
     $expiresAt = new DateTime($tokenData['token_expires']);
     if ($now > $expiresAt) {
+        Logger::logTokenValidation('unknown', false);
         die(json_encode(['success' => false, 'error' => 'Zugriff abgelaufen.']));
     }
 }
+
+Logger::logTokenValidation('unknown', true);
 
 function formatPhoneNumber($phone) {
     $phone = trim($phone);

@@ -10,6 +10,8 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
+$jobStart = microtime(true);
+
 // ===== LOGGING =====
 $logFile = __DIR__ . '/cron_sms.log';
 function log_sms(string $msg, string $level = 'INFO'): void {
@@ -43,6 +45,9 @@ function db_conn(string $path): PDO {
     return $pdo;
 }
 
+// ===== LOGGER =====
+require_once dirname(__DIR__, 2) . '/Logger.php';
+
 function db_get_pending_sms(PDO $db): array {
     $stmt = $db->prepare('
         SELECT p.id, p.secret_token, p.tunnel, p.customer_id, c.phone_mobile, c.email
@@ -74,12 +79,15 @@ require_once __DIR__ . '/../../core/lib/SipgateClient.php';
 // ===== MAIN LOOP =====
 try {
     $db = db_conn(dirname(__DIR__, 2) . '/data/rockets.db');
+    Logger::init($db);
     $sipgate = new SipgateClient();
 
     $projects = db_get_pending_sms($db);
 
     if (empty($projects)) {
         log_sms("No pending SMS projects found");
+        $jobDuration = (microtime(true) - $jobStart) * 1000;
+        Logger::logJobExecution('cron_sms_r400', true, $jobDuration, ['projects_found' => 0]);
         exit(0);
     }
 
@@ -141,9 +149,13 @@ try {
     }
 
     log_sms("=== SMS Cronjob Complete ===");
+    $jobDuration = (microtime(true) - $jobStart) * 1000;
+    Logger::logJobExecution('cron_sms_r400', true, $jobDuration, ['projects_processed' => count($projects)]);
     exit(0);
 
 } catch (Throwable $ex) {
     log_sms("FATAL: " . $ex->getMessage(), 'FATAL');
+    $jobDuration = (microtime(true) - $jobStart) * 1000;
+    Logger::logJobExecution('cron_sms_r400', false, $jobDuration, ['error' => $ex->getMessage()]);
     exit(1);
 }

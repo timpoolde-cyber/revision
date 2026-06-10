@@ -130,6 +130,27 @@ try {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    // Tabelle: system_logs (Stufe 4: Structured logging & monitoring)
+    $db->exec("CREATE TABLE IF NOT EXISTS system_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        request_id TEXT NOT NULL,
+        level TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        actor_type TEXT,
+        actor_id TEXT,
+        duration_ms INTEGER,
+        message TEXT NOT NULL,
+        context_json TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_system_logs_timestamp ON system_logs(timestamp DESC)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_system_logs_request_id ON system_logs(request_id)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_system_logs_level ON system_logs(level)");
+
     // HINWEIS: Automatisches Seeding deaktiviert.
     // Admin-Benutzer müssen manuell über user_management.php angelegt werden.
     // Dies verhindert unbeabsichtigte Passwort-Resets bei Datenbankinitialisierungen.

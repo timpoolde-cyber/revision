@@ -8,6 +8,9 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 require_once __DIR__ . '/session_handler.php';
+require_once __DIR__ . '/Logger.php';
+
+$requestStart = microtime(true);
 
 // All requests require authentication
 $method = $_SERVER['REQUEST_METHOD'];
@@ -21,6 +24,7 @@ $dbPath = __DIR__ . '/data/rockets.db';
 try {
     $db = new PDO('sqlite:' . $dbPath);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    Logger::init($db);
 } catch (PDOException $e) {
     error_log("Database connection error: " . $e->getMessage());
     echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
@@ -438,8 +442,12 @@ if ($method === 'POST') {
             $stmt->execute([$id]);
             $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save_customer', true, $requestDuration, ['customer_id' => $id]);
             echo json_encode(['success' => true, 'data' => ['id' => $id, 'token' => $customer['secret_token']]]);
         } catch (Exception $e) {
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save_customer', false, $requestDuration, ['error' => $e->getMessage()]);
             error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
@@ -473,9 +481,13 @@ if ($method === 'POST') {
 
             $db->commit();
 
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save', true, $requestDuration, ['project_id' => $id, 'tunnel' => $tunnel]);
             echo json_encode(['success' => true, 'id' => $id]);
         } catch (Exception $e) {
             if ($db->inTransaction()) $db->rollBack();
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save', false, $requestDuration, ['error' => $e->getMessage()]);
             error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
@@ -690,8 +702,12 @@ if ($method === 'POST') {
                 }
             }
 
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('run_psi_now', true, $requestDuration, ['project_id' => $projectId, 'results_count' => count($resultData)]);
             echo json_encode(['success' => true, 'results' => $resultData]);
         } catch (Exception $e) {
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('run_psi_now', false, $requestDuration, ['error' => $e->getMessage()]);
             error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
         }
         exit;
@@ -1021,5 +1037,7 @@ if ($method === 'POST') {
     }
 }
 
+$requestDuration = (microtime(true) - $requestStart) * 1000;
+Logger::logRequest($action, false, $requestDuration, ['reason' => 'invalid_action']);
 echo json_encode(['success' => false, 'error' => 'Ungültige Aktion.']);
 ?>
