@@ -1,7 +1,8 @@
 /* r400-status.css — Zentrales Status-Cockpit
    Eine Datei für Header (Innenseiten) und Karten (crm.php).
-   Farbe läuft über --c je Zustand; Strichstärke bleibt per non-scaling-stroke
-   in jeder Größe konstant. */
+   Farbe läuft über --c je Zustand. Die Strichstärke steckt als
+   non-scaling-stroke-Attribut in den Symbolen selbst (r400_status.php),
+   damit der Strich in jeder Größe gleich dünn bleibt. */
 
 .r4-cockpit {
   display: flex;
@@ -24,11 +25,8 @@
   display: block;
   width: var(--r4-size, 28px);
   height: calc(var(--r4-size, 28px) * 1.375);
-  stroke-width: 1.6;
   overflow: visible;
 }
-/* Strich bleibt überall gleich dünn, egal wie klein skaliert wird */
-.r4ic__icon * { vector-effect: non-scaling-stroke; }
 
 .r4ic__label {
   font-size: 8px;
@@ -40,7 +38,7 @@
 }
 
 /* ── Zustände ── */
-.r4ic--grau    { --c: #c4c4c4; }
+.r4ic--grau    { --c: #bdbdbd; }
 .r4ic--schwarz { --c: #111111; }
 .r4ic--gruen   { --c: #16c784; }
 .r4ic--rot     { --c: #e5544b; }
@@ -52,9 +50,33 @@
 @keyframes r4blink { 50% { opacity: 0.32; } }
 
 /* ── Varianten ── */
-.r4-cockpit--header { --r4-size: 18px; gap: 5px; }
-.r4-cockpit--card   { --r4-size: 30px; gap: 8px; }
+.r4-cockpit--header { --r4-size: 24px; gap: 6px; }
+.r4-cockpit--card   { --r4-size: 32px; gap: 8px; }
 .r4-cockpit--card .r4ic__label { font-size: 9px; }
 
 /* Optional: Labels im Header ausblenden, wenn es eng wird
 .r4-cockpit--header .r4ic__label { display: none; } */
+
+/* ── Kanal-Badge ── */
+.r4-kanal {
+  display: inline-block;
+  background: transparent;
+  color: #6f6f78;
+  border: 1px solid #d4d4d8;
+  padding: 3px 9px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+
+/* Kanal als feines Signal nur über die Randfarbe, Text bleibt grau */
+.r4-kanal--lead { border-color: #d4d4d8; }
+.r4-kanal--vip  { border-color: #16c784; }
+.r4-kanal--maps { border-color: #bdbdbd; }
+
+@media (max-width: 360px) {
+  .r4-cockpit--header .r4ic__label { display: none; }
+}
