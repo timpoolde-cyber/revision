@@ -250,6 +250,15 @@ function pagespeed_scores(string $url, string $api_key): ?array {
 function db_conn(string $path): PDO {
     $pdo = new PDO('sqlite:' . $path);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // A1: Idempotente Migration für channel-Spalte
+    try {
+        $cols = $pdo->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('channel', $cols, true)) {
+            $pdo->exec("ALTER TABLE projects ADD COLUMN channel TEXT DEFAULT 'lead'");
+        }
+    } catch (Throwable $e) { /* ignore */ }
+
     return $pdo;
 }
 
@@ -274,8 +283,8 @@ function db_create_customer(PDO $db, string $name, string $email, string $phone,
 }
 
 function db_create_project(PDO $db, int $customer_id, string $customer_name, string $target_url): int {
-    $stmt = $db->prepare('INSERT INTO projects (customer_id, customer_name, target_url, tunnel, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)');
-    $stmt->execute([$customer_id, $customer_name, $target_url, 'anfrage']);
+    $stmt = $db->prepare('INSERT INTO projects (customer_id, customer_name, target_url, tunnel, channel, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)');
+    $stmt->execute([$customer_id, $customer_name, $target_url, 'anfrage', 'vip']);
     return (int)$db->lastInsertId();
 }
 
@@ -317,9 +326,15 @@ if ($token) {
         $project = $customer;
         $psi = db_get_psi_results($db, $project['pid']);
 
-        // Admin-Schutz: Keine Tracking-Updates bei adm=1
+        // B6: Tracking-Logik — token_used_at setzen (außer bei adm=1)
         if (!(isset($_GET['adm']) && $_GET['adm'] === '1')) {
-            // Tracking-Logik hier (falls später implementiert)
+            try {
+                // Setze token_used_at nur einmalig (wenn noch leer)
+                $stmt = $db->prepare('UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ? AND token_used_at IS NULL');
+                $stmt->execute([$customer['cid']]);
+            } catch (Throwable $e) {
+                error_log('[r400] token tracking error: ' . $e->getMessage());
+            }
         }
     }
 }
@@ -349,19 +364,6 @@ if ($method === 'POST' && $token && isset($_POST['action']) && $_POST['action'] 
     }
 }
 
-// GET-basierter Optout via Link
-if ($method === 'GET' && $token && isset($_GET['action']) && $_GET['action'] === 'optout') {
-    if ($project && $project['pid']) {
-        try {
-            db_update_project_phase($db, $project['pid'], 'abgeschaltet');
-            header('Location: ' . $_SERVER['REQUEST_URI'], true, 303);
-            exit;
-        } catch (Throwable $ex) {
-            error_log('[r400] optout error: ' . $ex->getMessage());
-        }
-    }
-}
-
 // form submission
 if ($method === 'POST' && !$token) {
     $url = trim($_POST['url'] ?? '');
@@ -369,8 +371,8 @@ if ($method === 'POST' && !$token) {
     $contact_secondary = trim($_POST['contact_secondary'] ?? $_POST['phone'] ?? '');
     $name = trim($_POST['name'] ?? '');
 
-    if (!$url || !$contact_primary) {
-        json_response(['ok' => false, 'error' => 'url und primärer kontakt erforderlich'], 400);
+    if (!$url) {
+        json_response(['ok' => false, 'error' => 'url erforderlich'], 400);
     }
 
     // URL-Toleranz: Fehlender Protokoll-Prefix hinzufügen
@@ -382,21 +384,23 @@ if ($method === 'POST' && !$token) {
         $url = 'https://' . $url;
     }
 
-    // Intelligente Feldidentifikation (Strenge Regel: Startet mit Ziffer/+/ → Telefon, enthält @ → E-Mail)
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        json_response(['ok' => false, 'error' => 'ungültige url'], 400);
+    }
+
+    // Intelligente Feldidentifikation (Startet mit Ziffer/+/0 → Telefon, enthält @ → E-Mail)
     $email = '';
     $phone = '';
 
-    $primary_starts_with_digit = preg_match('/^[\d+\/]/', $contact_primary);
+    $primary_starts_with_digit = preg_match('/^[\d+]/', $contact_primary);
     $primary_has_at_sign = strpos($contact_primary, '@') !== false;
 
     if ($primary_has_at_sign) {
-        // Primary ist E-Mail
         $email = $contact_primary;
         if (!empty($contact_secondary)) {
             $phone = $contact_secondary;
         }
-    } else if ($primary_starts_with_digit) {
-        // Primary ist Telefon
+    } else if ($primary_starts_with_digit || preg_match('/^0\d/', $contact_primary)) {
         $phone = $contact_primary;
         if (!empty($contact_secondary)) {
             $email = $contact_secondary;
@@ -409,17 +413,14 @@ if ($method === 'POST' && !$token) {
         }
     }
 
-    if (empty($email)) {
-        json_response(['ok' => false, 'error' => 'gültige email erforderlich'], 400);
+    // B2: Akzeptiere email ODER phone (nicht mehr AND)
+    if (empty($email) && empty($phone)) {
+        json_response(['ok' => false, 'error' => 'e-mail oder telefon erforderlich'], 400);
     }
 
     // Formatiere Telefonnummer ins internationale Format
     if (!empty($phone)) {
         $phone = format_phone_number($phone);
-    }
-
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        json_response(['ok' => false, 'error' => 'ungültige url'], 400);
     }
 
     // token generieren
@@ -429,42 +430,50 @@ if ($method === 'POST' && !$token) {
         // kunde anlegen
         $customer_id = db_create_customer($db, $name ?: 'unbekannt', $email, $phone ?: '', $token);
         // projekt anlegen
-        $project_id = db_create_project($db, $customer_id, $name ?: $email, $url);
+        $project_id = db_create_project($db, $customer_id, $name ?: ($email ?: 'Unbekannt'), $url);
 
-        // apis im hintergrund triggern
-        if (!$cfg['pagespeed_key'] || !$cfg['anthropic_key']) {
-            json_response(['ok' => true, 'token' => $token, 'message' => 'kunde angelegt, apis nicht konfiguriert']);
-        }
+        // B4: Eingangsbestätigung senden (SMS wenn phone, sonst mail)
+        $confirmation_url = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://')
+            . $_SERVER['HTTP_HOST']
+            . dirname($_SERVER['PHP_SELF'])
+            . '?t=' . urlencode($token);
 
-        // pagespeed
-        $scores = pagespeed_scores($url, $cfg['pagespeed_key']);
-        if ($scores) {
-            // ki-score hinzufügen
-            $html = http_get($url, 15);
-            $scores['ki'] = $html ? ki_score($html) : 0;
-
-            // anthropic analyse
-            $analysis = anthropic_analysis($url, $scores, $cfg);
-
-            // in db speichern
-            db_save_psi_results($db, $project_id, $scores, $analysis);
-
-            // projekt-phase auf 'bewertet' setzen
-            db_update_project_phase($db, $project_id, 'bewertet');
-
-            // mail an admin
-            $subject = 'r400 neue anfrage: ' . $email;
-            $body = "neue anfrage über r400 kundenportal\n"
-                . "name: " . ($name ?: 'nicht angegeben') . "\n"
-                . "email: " . $email . "\n"
-                . "telefon: " . ($phone ?: 'nicht angegeben') . "\n"
-                . "url: " . $url . "\n"
-                . "token: " . $token . "\n"
-                . "scores: tempo " . $scores['tempo'] . ", sichtbar " . $scores['sichtbar'] . ", ki " . $scores['ki'] . ", struktur " . $scores['struktur'] . "\n"
-                . "zeit: " . date('c') . "\n";
+        if (!empty($phone)) {
+            // B4: SMS-Versand für Phone-Kunden (direkt, nicht via Worker)
+            require_once __DIR__ . '/../../core/lib/SipgateClient.php';
+            $sipgate = new SipgateClient();
+            $sms_message = "// r400™ // website-revision\n"
+                         . "deine anfrage ist eingegangen.\n"
+                         . "hier geht's zu deinen ergebnissen:\n"
+                         . $confirmation_url . "\n";
+            $sipgate->sendSMS($phone, $sms_message);
+        } else if (!empty($email)) {
+            // Mail-Versand (direkt, nur Kunde)
+            $subject = 'r400 · deine anfrage ist eingegangen';
+            $body = "hallo" . ($name ? ' ' . $name : '') . ",\n\n"
+                . "deine anfrage ist eingegangen.\n"
+                . "hier geht's zu deinen ergebnissen:\n"
+                . $confirmation_url . "\n\n"
+                . "die erste analyse läuft gerade.\n"
+                . "in kürze bekommst du den quick report.\n\n"
+                . "viele grüße\n"
+                . "r400\n";
             $headers = 'From: ' . $cfg['mail_from'] . "\r\nContent-Type: text/plain; charset=utf-8\r\n";
-            @mail($cfg['mail_to'], '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+            @mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
         }
+
+        // Mail an admin (mit KP-Link und Token)
+        $admin_subject = 'r400 neue anfrage: ' . ($email ?: $phone);
+        $admin_body = "neue anfrage über r400 kundenportal\n"
+            . "name: " . ($name ?: 'nicht angegeben') . "\n"
+            . "email: " . ($email ?: 'nicht angegeben') . "\n"
+            . "telefon: " . ($phone ?: 'nicht angegeben') . "\n"
+            . "url: " . $url . "\n"
+            . "token: " . $token . "\n"
+            . "kp-link: " . $confirmation_url . "\n"
+            . "zeit: " . date('c') . "\n";
+        $admin_headers = 'From: ' . $cfg['mail_from'] . "\r\nContent-Type: text/plain; charset=utf-8\r\n";
+        @mail($cfg['mail_to'], '=?UTF-8?B?' . base64_encode($admin_subject) . '?=', $admin_body, $admin_headers);
 
         json_response(['ok' => true, 'token' => $token]);
 
@@ -537,11 +546,11 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 <?php if (!$customer): ?>
 
 <div class="section">
-    <div class="title">R400™ // timo e. pohlhaus / website-revision</div>
+    <div class="title">R400™ // website-revision</div>
 
     <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
-        du hast meine karte.<br>
-        hier ist der check.
+        hey, du hast meine karte. hier kannst du deine url checken.<br>
+        ist deine website schnell genug — oder weg vom ki-fenster?
     </div>
 
     <form method="post" onsubmit="return submitForm(event)" id="auditForm">
@@ -593,8 +602,11 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 
     <div class="vip-action-section">
         <a href="?t=<?php echo htmlspecialchars($token); ?>&action=optout" class="vip-btn-optout">
-            // benachrichtigungen abschalten &rarr;
+            // benachrichtigungen stoppen &rarr;
         </a>
+        <div style="margin-top: 20px; font-size: 11px; color: var(--di);">
+            <a href="#ueber" style="color: var(--gr); text-decoration: none;">// über timo →</a>
+        </div>
     </div>
 
 </div>
@@ -609,6 +621,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 
     <div class="vip-msg-white">
         es werden keine daten mehr verarbeitet.
+    </div>
+
+    <div class="vip-action-section">
+        <div style="font-size: 11px;">
+            <a href="#ueber" style="color: var(--gr); text-decoration: none;">// über timo →</a>
+        </div>
     </div>
 
 </div>
@@ -658,8 +676,66 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 
     <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
         <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
-            // benachrichtigungen abschalten →
+            // benachrichtigungen stoppen →
         </a>
+        <div style="margin-top: 12px; font-size: 11px;">
+            <a href="#ueber" style="color: var(--gr); text-decoration: none;">// über timo →</a>
+        </div>
+    </div>
+</div>
+
+    <?php endif; ?>
+
+<?php elseif ($project['tunnel'] === 'bereit' && $psi): ?>
+
+<div class="section">
+    <div class="title">PORTAL — STATE 2 // QUICK REPORT</div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        // erste auswertung fertig.
+    </div>
+
+    <?php
+    $quick = json_decode($psi['report_quick_json'], true);
+    if (is_array($quick)):
+        $qj = $quick;
+    ?>
+
+    <div class="report-scores" style="margin-bottom: 32px;">
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['performance_score'] ?> ] TEMPO</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['tempo'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['seo_score'] ?> ] SICHTBAR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['sichtbar'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['accessibility_score'] ?> ] KI-LESBAR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['ki'] ?? '') ?></div>
+        </div>
+        <div class="score-row" style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 16px;">[ <?= (int)$psi['best_practices_score'] ?> ] STRUKTUR</div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--fg);"><?= e($qj['struktur'] ?? '') ?></div>
+        </div>
+    </div>
+
+    <div class="text-block" style="margin-bottom: 24px; border: none; padding: 0;">
+        der vollständige befund folgt<br>
+        innerhalb von 24 stunden.
+    </div>
+
+    <div class="status-badge" style="font-size: 11px; color: var(--di); text-transform: uppercase; margin-bottom: 32px;">
+        status: tiefenanalyse läuft
+    </div>
+
+    <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
+        <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
+            // benachrichtigungen stoppen →
+        </a>
+        <div style="margin-top: 12px; font-size: 11px;">
+            <a href="#ueber" style="color: var(--gr); text-decoration: none;">// über timo →</a>
+        </div>
     </div>
 </div>
 
@@ -688,8 +764,11 @@ body{background:var(--bg);color:var(--fg);font-family:var(--mo);font-size:13px;l
 <div class="section">
 <div class="action-block" style="border-top: 1px solid var(--line); padding-top: 16px;">
     <a href="#" onclick="return deactivateNotifications(event)" style="color: var(--di); text-decoration: none; font-size: 11px;">
-        // benachrichtigungen abschalten →
+        // benachrichtigungen stoppen →
     </a>
+    <div style="margin-top: 12px; font-size: 11px;">
+        <a href="#ueber" style="color: var(--gr); text-decoration: none;">// über timo →</a>
+    </div>
 </div>
 </div>
 
@@ -876,6 +955,20 @@ if (urlInput) {
     });
 }
 </script>
+
+<!-- B8: über timo section -->
+<div id="ueber" style="max-width: 600px; margin: 80px auto 60px; padding: 32px 20px; color: var(--mu); font-size: 12px; line-height: 1.6; text-align: center;">
+    <div style="margin-bottom: 20px;">
+        <strong style="color: var(--fg);">r400™</strong> / timo e. pohlhaus
+    </div>
+    <div style="margin-bottom: 20px;">
+        website-revision & lighthouse audits.<br>
+        drei fragen: ist sie schnell genug? für ki nutzbar? gut strukturiert?
+    </div>
+    <div>
+        <a href="https://r400.de" style="color: var(--gr); text-decoration: none;">r400.de →</a>
+    </div>
+</div>
 
 </body>
 </html>
