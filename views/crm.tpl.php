@@ -112,6 +112,17 @@
           </select>
         </div>
         <div class="modal-form-row">
+          <label class="modal-label" for="mChannel">Kanal</label>
+          <select class="modal-input" id="mChannel">
+            <option value="lead" selected>Lead</option>
+            <option value="maps">Maps</option>
+            <option value="vip">VIP</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="modal-form-row">
           <label class="modal-label" for="mAlertLevel">Alert-Level</label>
           <select class="modal-input" id="mAlertLevel">
             <option value="eskalation">Eskalation</option>
@@ -314,8 +325,9 @@ function renderCard(l) {
 
     ${l.budget ? `<div style="font-family:var(--font-mono);font-size:11px;font-weight:bold;margin-bottom:8px;text-transform:uppercase;">Wert: ${parseFloat(l.budget).toLocaleString('de-DE', {style: 'currency', currency: 'EUR'})}</div>` : ''}
 
-    <div style="display:flex;gap:4px;margin-bottom:12px;">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
       ${r4StatusCockpit(r4StageStates(l), 'card')}
+      ${r4KanalBadge(l.channel || 'lead')}
     </div>
 
     <div style="display:flex;gap:12px;align-items:start;padding-top:12px;border-top:1px solid #f0f0f0;font-size:12px;">
@@ -339,6 +351,7 @@ function openModal() {
   document.getElementById('mNotiz').value = '';
   document.getElementById('mSchutt').value = '';
   document.getElementById('mTunnel').value = 'anfrage';
+  document.getElementById('mChannel').value = 'lead';
   document.getElementById('mAlertLevel').value = 'normal';
   document.getElementById('mCustomerSelect').value = '';
   document.getElementById('modalOverlay').classList.add('open');
@@ -429,6 +442,7 @@ async function saveLead() {
       customer_name: name,
       target_url: url,
       tunnel: document.getElementById('mTunnel').value,
+      channel: document.getElementById('mChannel').value,
       alert_level: document.getElementById('mAlertLevel').value,
       notiz: document.getElementById('mNotiz').value.trim()
     });
