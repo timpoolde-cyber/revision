@@ -53,6 +53,11 @@ $stmt = $db->prepare("SELECT * FROM interactions WHERE project_id = ? ORDER BY c
 $stmt->execute([$currentProjectId]);
 $interactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// 8b. Jüngste PSI-Zeile (für Vier-Score-Block & LEDs)
+$stmt = $db->prepare("SELECT performance_score, accessibility_score, best_practices_score, seo_score, error_message FROM psi_results WHERE project_id = ? ORDER BY fetch_timestamp DESC LIMIT 1");
+$stmt->execute([$currentProjectId]);
+$latestPsi = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
 // 9. Konfiguration für die Navigationsleiste & API-Schlüssel
 $activeControl = 'History'; 
 

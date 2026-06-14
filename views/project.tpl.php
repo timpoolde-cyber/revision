@@ -45,6 +45,10 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
     .action-btn-square.lh-square.yellow { background: #FF9529; color: #fff; }
     .action-btn-square.lh-square.orange { background: #FF9529; color: #fff; }
     .action-btn-square.lh-square.red { background: #FF3131; color: #fff; }
+    .action-btn-square.lh-square.gray { background: #bdbdbd; color: #fff; cursor: default; }
+    .psi-cluster { display: flex; gap: 4px; }
+    .psi-cluster .action-btn-square { cursor: default; }
+    .psi-cluster .action-btn-square#lhSquare { cursor: pointer; }
 
     #sendTokenBtn { background: #000; color: #fff; font-size: 32px; }
 
@@ -62,12 +66,37 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
   <div class="content"><div class="section-title">PROJEKT: <?= htmlspecialchars($project['target_url']) ?></div>
 
 <div class="action-row" style="display: flex; gap: 24px; margin: 0 0 20px 0; padding: 0; align-items: flex-start; flex-wrap: wrap;">
-      <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
-        <span class="led" id="lhLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
-        <button class="action-btn-square lh-square" id="lhSquare" title="Klick für PSI-Messung">
-          <span class="btn-label">Score/PSI</span>
-          <span class="btn-icon" style="font-size: 32px; line-height: 1.2; margin-top: 4px;">-</span>
-        </button>
+      <?php
+        $psiLabels = [
+          'lhSquare'   => ['label' => 'Tempo',          'val' => $latestPsi['performance_score']    ?? null],
+          'a11ySquare' => ['label' => 'Zugänglichkeit', 'val' => $latestPsi['accessibility_score']  ?? null],
+          'bpSquare'   => ['label' => 'Technik',        'val' => $latestPsi['best_practices_score'] ?? null],
+          'seoSquare'  => ['label' => 'SEO',            'val' => $latestPsi['seo_score']            ?? null],
+        ];
+        $psiColor = function($s) {
+          if ($s === null) return 'gray';
+          if ($s >= 90) return '';
+          if ($s >= 75) return 'yellow';
+          if ($s >= 50) return 'orange';
+          return 'red';
+        };
+      ?>
+      <div class="psi-cluster">
+        <?php foreach ($psiLabels as $sqId => $sq):
+          $val = $sq['val'];
+          $cls = $psiColor($val);
+          $disp = $val === null ? '-' : (int)$val;
+        ?>
+          <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
+            <?php if ($sqId === 'lhSquare'): ?>
+              <span class="led" id="lhLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
+            <?php endif; ?>
+            <button type="button" class="action-btn-square lh-square <?= $cls ?>" id="<?= $sqId ?>"<?= $sqId === 'lhSquare' ? ' title="Klick für PSI-Messung"' : ' tabindex="-1"' ?>>
+              <span class="btn-label"><?= htmlspecialchars($sq['label']) ?></span>
+              <span class="btn-icon" style="font-size: 32px; line-height: 1.2; margin-top: 4px;"><?= $disp ?></span>
+            </button>
+          </div>
+        <?php endforeach; ?>
       </div>
       <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
         <span class="led" id="tokenLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
@@ -207,19 +236,34 @@ document.getElementById('sendTokenBtn').addEventListener('click', async (e) => {
   }
 });
 
-// DIREKTE GOOGLE-MESSUNG (KOMPLETT BEREINIGT)
+// DIREKTE GOOGLE-MESSUNG (vier Scores)
+const PSI_SQUARES = ['lhSquare', 'a11ySquare', 'bpSquare', 'seoSquare'];
+function setPsiSquare(id, value) {
+  const sq = document.getElementById(id);
+  if (!sq) return;
+  sq.querySelector('.btn-icon').innerText = (value === null || value === undefined) ? '-' : value;
+  const cls = (value === null || value === undefined) ? 'gray' : getLHSquareColor(value);
+  sq.className = 'action-btn-square lh-square ' + cls;
+}
+function spinPsiSquares() {
+  PSI_SQUARES.forEach(id => {
+    const sq = document.getElementById(id);
+    if (!sq) return;
+    sq.querySelector('.btn-icon').innerText = '⟳';
+    sq.className = 'action-btn-square lh-square';
+  });
+}
+
 document.getElementById('lhSquare').addEventListener('click', async (e) => {
   e.preventDefault();
-  const square = e.target.closest('.action-btn-square');
-  square.querySelector('.btn-icon').innerText = "⟳";
-  square.className = 'action-btn-square lh-square';
-  
+  spinPsiSquares();
+
   const targetUrl = '<?= !empty($project['target_url']) ? $project['target_url'] : '' ?>';
-  const apiKey = '<?= $lighthouseKey ?>'; 
+  const apiKey = '<?= $lighthouseKey ?>';
 
   if (!targetUrl) {
     alert('Keine Ziel-URL für dieses Projekt hinterlegt.');
-    square.querySelector('.btn-icon').innerText = "-";
+    setPsiSquare('lhSquare', null); setPsiSquare('a11ySquare', null); setPsiSquare('bpSquare', null); setPsiSquare('seoSquare', null);
     return;
   }
 
@@ -236,8 +280,10 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
       const bp   = cats['best-practices'] ? Math.round(cats['best-practices'].score * 100) : null;
       const seo  = cats.seo ? Math.round(cats.seo.score * 100) : null;
 
-      square.querySelector('.btn-icon').innerText = score;
-      square.className = 'action-btn-square lh-square ' + getLHSquareColor(score);
+      setPsiSquare('lhSquare', score);
+      setPsiSquare('a11ySquare', a11y);
+      setPsiSquare('bpSquare', bp);
+      setPsiSquare('seoSquare', seo);
       showLED('lhLed', true);
 
       const timeStr = getCurrentTime();
@@ -282,12 +328,12 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
 
       setTimeout(() => location.reload(), 1000);
     } else {
-      square.querySelector('.btn-icon').innerText = "-";
+      setPsiSquare('lhSquare', null); setPsiSquare('a11ySquare', null); setPsiSquare('bpSquare', null); setPsiSquare('seoSquare', null);
       showLED('lhLed', false);
       addInteractionNote(<?= $currentProjectId ?>, 'Fehler', getCurrentTime() + ' — Lighthouse Messung fehlgeschlagen');
     }
   } catch (err) {
-    square.querySelector('.btn-icon').innerText = "-";
+    setPsiSquare('lhSquare', null); setPsiSquare('a11ySquare', null); setPsiSquare('bpSquare', null); setPsiSquare('seoSquare', null);
     showLED('lhLed', false);
     addInteractionNote(<?= $currentProjectId ?>, 'Fehler', getCurrentTime() + ' — Lighthouse API Error: ' + err.message);
   }
