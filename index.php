@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $customer_id = $db->lastInsertId();
 
             $secret_token = bin2hex(random_bytes(16));
-            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, phone_contact, updated_at) VALUES (?, ?, ?, 'anfrage', ?, ?, CURRENT_TIMESTAMP)");
+            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, secret_token, token_created_at, phone_contact, updated_at) VALUES (?, ?, ?, 'anfrage', ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)");
             $stmt->execute([$customer_id, $db_customer_name, $target_url, $secret_token, $contact_phone]);
 
             // Benachrichtigung senden

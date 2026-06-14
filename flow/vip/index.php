@@ -283,15 +283,15 @@ function db_get_psi_results(PDO $db, int $project_id): ?array {
     return $row ?: null;
 }
 
-function db_create_customer(PDO $db, string $name, string $email, string $phone, string $token): int {
-    $stmt = $db->prepare('INSERT INTO customers (customer_name, email, phone_mobile, secret_token, token_created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)');
-    $stmt->execute([$name, $email, $phone, $token]);
+function db_create_customer(PDO $db, string $name, string $email, string $phone): int {
+    $stmt = $db->prepare('INSERT INTO customers (customer_name, email, phone_mobile) VALUES (?, ?, ?)');
+    $stmt->execute([$name, $email, $phone]);
     return (int)$db->lastInsertId();
 }
 
-function db_create_project(PDO $db, int $customer_id, string $customer_name, string $target_url): int {
-    $stmt = $db->prepare('INSERT INTO projects (customer_id, customer_name, target_url, tunnel, channel, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)');
-    $stmt->execute([$customer_id, $customer_name, $target_url, 'anfrage', 'vip']);
+function db_create_project(PDO $db, int $customer_id, string $customer_name, string $target_url, string $token): int {
+    $stmt = $db->prepare('INSERT INTO projects (customer_id, customer_name, target_url, tunnel, channel, secret_token, token_created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
+    $stmt->execute([$customer_id, $customer_name, $target_url, 'anfrage', 'vip', $token]);
     return (int)$db->lastInsertId();
 }
 
@@ -435,9 +435,9 @@ if ($method === 'POST' && !$token) {
 
     try {
         // kunde anlegen
-        $customer_id = db_create_customer($db, $name ?: 'unbekannt', $email, $phone ?: '', $token);
-        // projekt anlegen
-        $project_id = db_create_project($db, $customer_id, $name ?: ($email ?: 'Unbekannt'), $url);
+        $customer_id = db_create_customer($db, $name ?: 'unbekannt', $email, $phone ?: '');
+        // projekt anlegen (token lebt am projekt)
+        $project_id = db_create_project($db, $customer_id, $name ?: ($email ?: 'Unbekannt'), $url, $token);
 
         // B4: Eingangsbestätigung senden (SMS wenn phone, sonst mail)
         $confirmation_url = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://')

@@ -453,19 +453,14 @@ if ($method === 'POST') {
                 $stmt = $db->prepare("UPDATE customers SET customer_name=?, email=?, phone_mobile=?, address=?, city=?, postal_code=?, latitude=?, longitude=? WHERE id=?");
                 $stmt->execute([$name, $email, $phone, $address, $city, $postal, $lat, $lon, $id]);
             } else {
-                $token = generate_secret_token();
-                $stmt = $db->prepare("INSERT INTO customers (customer_name, email, phone_mobile, address, city, postal_code, latitude, longitude, secret_token, token_created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $stmt->execute([$name, $email, $phone, $address, $city, $postal, $lat, $lon, $token]);
+                $stmt = $db->prepare("INSERT INTO customers (customer_name, email, phone_mobile, address, city, postal_code, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $email, $phone, $address, $city, $postal, $lat, $lon]);
                 $id = $db->lastInsertId();
             }
 
-            $stmt = $db->prepare("SELECT secret_token FROM customers WHERE id=?");
-            $stmt->execute([$id]);
-            $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
             $requestDuration = (microtime(true) - $requestStart) * 1000;
             Logger::logRequest('save_customer', true, $requestDuration, ['customer_id' => $id]);
-            echo json_encode(['success' => true, 'data' => ['id' => $id, 'token' => $customer['secret_token']]]);
+            echo json_encode(['success' => true, 'data' => ['id' => $id]]);
         } catch (Exception $e) {
             $requestDuration = (microtime(true) - $requestStart) * 1000;
             Logger::logRequest('save_customer', false, $requestDuration, ['error' => $e->getMessage()]);
@@ -537,10 +532,10 @@ if ($method === 'POST') {
                 exit;
             }
 
-            // Neuen Token generieren
+            // Neuen Token am Projekt generieren
             $newToken = generate_secret_token();
-            $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$newToken, $project['id']]);
+            $stmt = $db->prepare("UPDATE projects SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$newToken, $projectId]);
 
             // Email versenden
             $tokenLink = rtrim(dirname($_SERVER['HTTP_HOST'] ? 'http://' . $_SERVER['HTTP_HOST'] : ''), '/') . '/update.php?token=' . $newToken;
@@ -624,19 +619,16 @@ if ($method === 'POST') {
                 exit;
             }
 
-            $stmt = $db->prepare("SELECT c.id FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
+            $stmt = $db->prepare("SELECT id FROM projects WHERE id = ?");
             $stmt->execute([$projectId]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$result || !$result['id']) {
-                echo json_encode(['success' => false, 'error' => 'Projekt oder Kunde nicht gefunden']);
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                echo json_encode(['success' => false, 'error' => 'Projekt nicht gefunden']);
                 exit;
             }
 
-            $customerId = $result['id'];
             $newToken = generate_secret_token();
-            $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$newToken, $customerId]);
+            $stmt = $db->prepare("UPDATE projects SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $stmt->execute([$newToken, $projectId]);
 
             echo json_encode(['success' => true, 'token' => $newToken]);
         } catch (Exception $e) {
@@ -653,47 +645,16 @@ if ($method === 'POST') {
                 exit;
             }
 
-            $stmt = $db->prepare("SELECT c.id FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
+            $stmt = $db->prepare("SELECT id FROM projects WHERE id = ?");
             $stmt->execute([$projectId]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$result || !$result['id']) {
-                echo json_encode(['success' => false, 'error' => 'Projekt oder Kunde nicht gefunden']);
-                exit;
-            }
-
-            $customerId = $result['id'];
-            $newToken = generate_secret_token();
-            $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP, token_used_at = NULL WHERE id = ?");
-            $stmt->execute([$newToken, $customerId]);
-
-            echo json_encode(['success' => true, 'token' => $newToken]);
-        } catch (Exception $e) {
-            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
-        }
-        exit;
-    }
-
-    if ($action === 'renew_token') {
-        try {
-            $token = $input['token'] ?? '';
-            if (!$token) {
-                echo json_encode(['success' => false, 'error' => 'Token erforderlich']);
-                exit;
-            }
-
-            $stmt = $db->prepare("SELECT id FROM customers WHERE secret_token = ?");
-            $stmt->execute([$token]);
-            $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$customer) {
-                echo json_encode(['success' => false, 'error' => 'Ungültiger Token']);
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                echo json_encode(['success' => false, 'error' => 'Projekt nicht gefunden']);
                 exit;
             }
 
             $newToken = generate_secret_token();
-            $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$newToken, $customer['id']]);
+            $stmt = $db->prepare("UPDATE projects SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP, token_used_at = NULL WHERE id = ?");
+            $stmt->execute([$newToken, $projectId]);
 
             echo json_encode(['success' => true, 'token' => $newToken]);
         } catch (Exception $e) {
