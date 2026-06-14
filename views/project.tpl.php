@@ -223,14 +223,19 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
     return;
   }
 
-  const psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&key=${apiKey}&strategy=mobile`;
+  const psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&key=${apiKey}&strategy=mobile&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO`;
 
   try {
     const res = await fetch(psiUrl);
     const json = await res.json();
 
     if (json.lighthouseResult) {
-      const score = Math.round(json.lighthouseResult.categories.performance.score * 100);
+      const cats = json.lighthouseResult.categories || {};
+      const score = Math.round((cats.performance?.score ?? 0) * 100);
+      const a11y = cats.accessibility ? Math.round(cats.accessibility.score * 100) : null;
+      const bp   = cats['best-practices'] ? Math.round(cats['best-practices'].score * 100) : null;
+      const seo  = cats.seo ? Math.round(cats.seo.score * 100) : null;
+
       square.querySelector('.btn-icon').innerText = score;
       square.className = 'action-btn-square lh-square ' + getLHSquareColor(score);
       showLED('lhLed', true);
@@ -241,21 +246,24 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
       await fetch('api_interactions.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          project_id: <?= $currentProjectId ?>, 
-          type: 'Aktion', 
-          content: timeStr + ' — PSI-Messung durchgeführt' 
+        body: JSON.stringify({
+          project_id: <?= $currentProjectId ?>,
+          type: 'Aktion',
+          content: timeStr + ' — PSI-Messung durchgeführt'
         })
       });
 
-      // 2. Score im Projekt updaten via api_interactions
-      await fetch('api_interactions.php', {
+      // 2. Vier Scores in psi_results speichern (last_score = Performance)
+      await fetch('api.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          project_id: <?= $currentProjectId ?>, 
-          action: 'save_score', 
-          score: score 
+        body: JSON.stringify({
+          action: 'save_psi_scores',
+          project_id: <?= $currentProjectId ?>,
+          performance: score,
+          accessibility: a11y,
+          best_practices: bp,
+          seo: seo
         })
       });
 

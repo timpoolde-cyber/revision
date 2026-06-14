@@ -858,6 +858,35 @@ if ($method === 'POST') {
         exit;
     }
 
+    if ($action === 'save_psi_scores') {
+        try {
+            $projectId = $input['project_id'] ?? null;
+            $performance = isset($input['performance']) ? (int)$input['performance'] : null;
+            $accessibility = isset($input['accessibility']) ? (int)$input['accessibility'] : null;
+            $best_practices = isset($input['best_practices']) ? (int)$input['best_practices'] : null;
+            $seo = isset($input['seo']) ? (int)$input['seo'] : null;
+
+            if (!$projectId || $performance === null) {
+                echo json_encode(['success' => false, 'error' => 'Projekt ID und Performance erforderlich']);
+                exit;
+            }
+
+            $db->beginTransaction();
+            $stmt = $db->prepare("INSERT INTO psi_results (project_id, strategy, performance_score, accessibility_score, best_practices_score, seo_score, fetch_timestamp) VALUES (?, 'mobile', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            $stmt->execute([$projectId, $performance, $accessibility, $best_practices, $seo]);
+
+            $stmt = $db->prepare("UPDATE projects SET last_score = ? WHERE id = ?");
+            $stmt->execute([$performance, $projectId]);
+            $db->commit();
+
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
+        }
+        exit;
+    }
+
     if ($action === 'save_project_data') {
         try {
             $projectId = $input['project_id'] ?? null;
