@@ -421,8 +421,9 @@ function formatURL(url) {
 async function saveLead() {
   const name = document.getElementById('mFirma').value.trim();
   let url = document.getElementById('mUrl').value.trim();
-  if (!name || !url) { showError('Firma und URL erforderlich'); return; }
-  url = formatURL(url);
+  if (!name) { showError('Firma erforderlich'); return; }
+  if (!url) url = '';
+  else url = formatURL(url);
 
   const btn = event.target;
   btn.textContent = '…';
