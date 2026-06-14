@@ -153,6 +153,53 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
       </div>
     </div>
 
+    <?php
+      // Prozess-LEDs: PSI / Token / LXP
+      $ledColors = ['grau' => '#bdbdbd', 'schwarz' => '#111', 'gruen' => '#16c784', 'rot' => '#e5544b'];
+
+      // PSI
+      if ($latestPsi) {
+          if (!empty($latestPsi['error_message'])) {
+              $psiState = 'rot';
+          } elseif ($latestPsi['performance_score'] !== null
+                 && $latestPsi['accessibility_score'] !== null
+                 && $latestPsi['best_practices_score'] !== null
+                 && $latestPsi['seo_score'] !== null) {
+              $psiState = 'gruen';
+          } else {
+              $psiState = 'grau';
+          }
+      } else {
+          $psiState = 'grau';
+      }
+
+      // Token
+      if (empty($secret_token)) {
+          $tokenState = 'grau';
+      } elseif (empty($project['token_used_at'])) {
+          $tokenState = 'schwarz';
+      } else {
+          $tokenState = 'gruen';
+      }
+
+      // LXP
+      $lxpState = !empty($project['notified_at']) ? 'gruen' : 'grau';
+
+      $leds = [
+        ['label' => 'PSI',   'state' => $psiState],
+        ['label' => 'Token', 'state' => $tokenState],
+        ['label' => 'LXP',   'state' => $lxpState],
+      ];
+    ?>
+    <div class="process-leds" style="display: flex; gap: 24px; margin: 0 0 16px 0; font-family: var(--font-mono);">
+      <?php foreach ($leds as $led): ?>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: <?= $ledColors[$led['state']] ?>;"></span>
+          <span style="font-size: 10px; text-transform: uppercase; color: #666;"><?= htmlspecialchars($led['label']) ?></span>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
     <div style="border-top: 1px solid #000; padding-top: 12px;">
       <form id="noteForm" style="margin-bottom: 16px;">
         <textarea id="noteContent" rows="2" style="width: 100%; box-sizing: border-box; border: 1px solid #000; padding: 8px; font-family: var(--font-mono); font-size: 12px;" placeholder="Neue Notiz..."></textarea>
