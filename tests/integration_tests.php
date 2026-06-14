@@ -88,16 +88,16 @@ $runner->test('system_logs table exists', function() use ($db) {
 $runner->test('customers table has required columns', function() use ($db) {
     $stmt = $db->query("PRAGMA table_info(customers)");
     $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
-    $required = ['id', 'customer_name', 'email', 'secret_token', 'token_expires'];
+    $required = ['id', 'customer_name', 'email'];
     foreach ($required as $col) {
         if (!in_array($col, $columns)) throw new Exception("Missing column: $col");
     }
 });
 
-$runner->test('projects table has tunnel and phase columns', function() use ($db) {
+$runner->test('projects table has tunnel, phase and token columns', function() use ($db) {
     $stmt = $db->query("PRAGMA table_info(projects)");
     $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
-    $required = ['id', 'tunnel', 'phase_1_initiated_at', 'phase_6_closed_at', 'secret_token'];
+    $required = ['id', 'tunnel', 'phase_1_initiated_at', 'phase_6_closed_at', 'secret_token', 'token_created_at', 'token_used_at', 'token_expires'];
     foreach ($required as $col) {
         if (!in_array($col, $columns)) throw new Exception("Missing column: $col");
     }
@@ -133,8 +133,8 @@ echo "\n=== Customer Management Tests ===\n";
 $testCustomerId = null;
 
 $runner->test('Create customer', function() use ($db, &$testCustomerId) {
-    $stmt = $db->prepare("INSERT INTO customers (customer_name, email, secret_token, token_created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)");
-    $stmt->execute(['Test Company', 'test@example.com', 'token-test-abc-123']);
+    $stmt = $db->prepare("INSERT INTO customers (customer_name, email) VALUES (?, ?)");
+    $stmt->execute(['Test Company', 'test@example.com']);
     $testCustomerId = $db->lastInsertId();
     if (!$testCustomerId) throw new Exception("Customer not created");
 });
@@ -190,23 +190,23 @@ $runner->test('Update project tunnel state', function() use ($db, $testProjectId
 // ===== TEST 5: Token Management =====
 echo "\n=== Token Management Tests ===\n";
 
-$runner->test('Token generation creates valid token', function() use ($db, $testCustomerId) {
+$runner->test('Token generation creates valid token', function() use ($db, $testProjectId) {
     $token = bin2hex(random_bytes(32));
-    $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
-    $stmt->execute([$token, $testCustomerId]);
-    $stmt = $db->prepare("SELECT secret_token FROM customers WHERE id = ?");
-    $stmt->execute([$testCustomerId]);
+    $stmt = $db->prepare("UPDATE projects SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $stmt->execute([$token, $testProjectId]);
+    $stmt = $db->prepare("SELECT secret_token FROM projects WHERE id = ?");
+    $stmt->execute([$testProjectId]);
     $stored = $stmt->fetchColumn();
     if ($stored !== $token) throw new Exception("Token not stored");
 });
 
-$runner->test('Token expiration validation', function() use ($db, $testCustomerId) {
+$runner->test('Token expiration validation', function() use ($db, $testProjectId) {
     $futureDate = date('Y-m-d H:i:s', strtotime('+30 days'));
-    $stmt = $db->prepare("UPDATE customers SET token_expires = ? WHERE id = ?");
-    $stmt->execute([$futureDate, $testCustomerId]);
+    $stmt = $db->prepare("UPDATE projects SET token_expires = ? WHERE id = ?");
+    $stmt->execute([$futureDate, $testProjectId]);
 
-    $stmt = $db->prepare("SELECT token_expires FROM customers WHERE id = ?");
-    $stmt->execute([$testCustomerId]);
+    $stmt = $db->prepare("SELECT token_expires FROM projects WHERE id = ?");
+    $stmt->execute([$testProjectId]);
     $expires = $stmt->fetchColumn();
 
     $now = new DateTime();
