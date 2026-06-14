@@ -480,6 +480,12 @@ if ($method === 'POST') {
             $alert_level = $input['alert_level'] ?? 'normal';
             $notiz = $input['notiz'] ?? '';
 
+            if (empty($url)) {
+                $tunnel = 'url_fehlt';
+            } elseif ($tunnel === 'url_fehlt') {
+                $tunnel = 'anfrage';
+            }
+
             $db->beginTransaction();
 
             if ($id) {
