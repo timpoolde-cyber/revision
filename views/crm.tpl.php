@@ -430,11 +430,9 @@ async function saveLead() {
   btn.disabled = true;
 
   try {
-    let customerId = document.getElementById('mCustomerSelect').value || null;
-
-    const customerData = {
-      action: 'save_customer',
-      id: customerId,
+    const json = await postAction({
+      action: 'save_maps_lead',
+      customer_id: document.getElementById('mCustomerSelect').value || null,
       customer_name: name,
       email: document.getElementById('mEmail').value.trim(),
       phone: document.getElementById('mMobile').value.trim(),
@@ -442,26 +440,9 @@ async function saveLead() {
       city: document.getElementById('mCity').value.trim(),
       postal_code: document.getElementById('mPostal').value.trim(),
       latitude: window.mAddressLat || null,
-      longitude: window.mAddressLon || null
-    };
-
-    const custJson = await postAction(customerData);
-    if (custJson.success) {
-      customerId = custJson.data.id;
-    } else {
-      showError('Kunde konnte nicht erstellt werden');
-      return;
-    }
-
-    const json = await postAction({
-      action: 'save',
-      id: null,
-      customer_id: customerId,
-      customer_name: name,
+      longitude: window.mAddressLon || null,
       target_url: url,
-      tunnel: document.getElementById('mTunnel').value,
-      channel: document.getElementById('mChannel').value,
-      alert_level: document.getElementById('mAlertLevel').value,
+      channel: document.getElementById('mChannel').value || 'maps',
       notiz: document.getElementById('mNotiz').value.trim()
     });
 

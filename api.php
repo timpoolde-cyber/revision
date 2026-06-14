@@ -516,6 +516,63 @@ if ($method === 'POST') {
         exit;
     }
 
+    if ($action === 'save_maps_lead') {
+        try {
+            $db->beginTransaction();
+
+            $customer_id = $input['customer_id'] ?? null;
+            $cname = $input['customer_name'] ?? '';
+            $email = $input['email'] ?? '';
+            $phone = $input['phone'] ?? '';
+            $address = $input['address'] ?? '';
+            $city = $input['city'] ?? '';
+            $postal = $input['postal_code'] ?? '';
+            $lat = $input['latitude'] ?? null;
+            $lon = $input['longitude'] ?? null;
+            $target_url = $input['target_url'] ?? '';
+            $channel = $input['channel'] ?? 'maps';
+            $notiz = $input['notiz'] ?? '';
+
+            $phone = formatPhoneNumberAPI($phone);
+
+            if (!$customer_id) {
+                $stmt = $db->prepare("SELECT id FROM customers WHERE customer_name = ? AND postal_code = ? LIMIT 1");
+                $stmt->execute([$cname, $postal]);
+                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($existing) {
+                    $customer_id = $existing['id'];
+                } else {
+                    $stmt = $db->prepare("INSERT INTO customers (customer_name, email, phone_mobile, address, city, postal_code, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$cname, $email, $phone, $address, $city, $postal, $lat, $lon]);
+                    $customer_id = $db->lastInsertId();
+                }
+            }
+
+            $secret_token = bin2hex(random_bytes(16));
+            $tunnel = empty($target_url) ? 'url_fehlt' : 'anfrage';
+
+            $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, channel, tunnel, secret_token, token_created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+            $stmt->execute([$customer_id, $cname, $target_url, $channel, $tunnel, $secret_token]);
+            $project_id = $db->lastInsertId();
+
+            if (!empty($notiz)) {
+                $stmt = $db->prepare("INSERT INTO interactions (project_id, type, content) VALUES (?, 'Notiz', ?)");
+                $stmt->execute([$project_id, $notiz]);
+            }
+
+            $db->commit();
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save_maps_lead', true, $requestDuration, ['project_id' => $project_id]);
+            echo json_encode(['success' => true, 'data' => ['id' => $project_id]]);
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            $requestDuration = (microtime(true) - $requestStart) * 1000;
+            Logger::logRequest('save_maps_lead', false, $requestDuration, ['error' => $e->getMessage()]);
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
+        }
+        exit;
+    }
+
     if ($action === 'send_token_email') {
         try {
             $projectId = $input['project_id'] ?? null;
