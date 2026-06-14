@@ -32,7 +32,7 @@ $db = new PDO('sqlite:' . $dbPath);
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 Logger::init($db);
 
-$stmt = $db->prepare("SELECT c.*, p.id as project_id, p.last_score, p.target_url, p.tunnel FROM customers c JOIN projects p ON c.id = p.customer_id WHERE p.secret_token = ?");
+$stmt = $db->prepare("SELECT c.*, p.id as project_id, p.last_score, p.target_url, p.tunnel, p.token_expires FROM customers c JOIN projects p ON c.id = p.customer_id WHERE p.secret_token = ?");
 $stmt->execute([$token]);
 $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -60,8 +60,8 @@ Logger::logTokenValidation($data['project_id'] ?? 'unknown', true);
 // Register token usage only if not accessed by admin (Session-Login ODER adm=1-Parameter)
 $admBypass = $isAdmin || (isset($_GET['adm']) && $_GET['adm'] === '1');
 if (!$admBypass) {
-    $stmt = $db->prepare("UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ?");
-    $executeResult = $stmt->execute([$data['id']]);
+    $stmt = $db->prepare("UPDATE projects SET token_used_at = CURRENT_TIMESTAMP WHERE id = ? AND token_used_at IS NULL");
+    $executeResult = $stmt->execute([$data['project_id']]);
 
     // Log token usage in interactions
     $stmt = $db->prepare("INSERT INTO interactions (project_id, type, content) VALUES (?, 'Token-Verwendung', ?)");

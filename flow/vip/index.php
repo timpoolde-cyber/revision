@@ -270,7 +270,7 @@ function db_conn(string $path): PDO {
 }
 
 function db_get_by_token(PDO $db, string $token): ?array {
-    $stmt = $db->prepare('SELECT c.id as cid, c.customer_name, c.email, p.id as pid, p.target_url, p.tunnel FROM customers c LEFT JOIN projects p ON p.customer_id = c.id WHERE c.secret_token = ? LIMIT 1');
+    $stmt = $db->prepare('SELECT c.id as cid, c.customer_name, c.email, p.id as pid, p.target_url, p.tunnel FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.secret_token = ? LIMIT 1');
     $stmt->execute([$token]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
@@ -337,8 +337,8 @@ if ($token) {
         if (!(isset($_GET['adm']) && $_GET['adm'] === '1')) {
             try {
                 // Setze token_used_at nur einmalig (wenn noch leer)
-                $stmt = $db->prepare('UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ? AND token_used_at IS NULL');
-                $stmt->execute([$customer['cid']]);
+                $stmt = $db->prepare('UPDATE projects SET token_used_at = CURRENT_TIMESTAMP WHERE id = ? AND token_used_at IS NULL');
+                $stmt->execute([$project['pid']]);
             } catch (Throwable $e) {
                 error_log('[r400] token tracking error: ' . $e->getMessage());
             }
@@ -346,10 +346,10 @@ if ($token) {
     }
 }
 
-// GET-basierter Opt-Out Handler: Direkte DB-Update mit secret_token
+// GET-basierter Opt-Out Handler: Direkte DB-Update mit projects.secret_token
 if ($method === 'GET' && $token && isset($_GET['action']) && $_GET['action'] === 'optout') {
     try {
-        $stmt = $db->prepare('UPDATE projects SET tunnel = ? WHERE id = (SELECT p.id FROM projects p JOIN customers c ON p.customer_id = c.id WHERE c.secret_token = ? LIMIT 1)');
+        $stmt = $db->prepare('UPDATE projects SET tunnel = ? WHERE secret_token = ?');
         $stmt->execute(['abgeschaltet', $token]);
         header('Location: ?t=' . urlencode($token), true, 303);
         exit;
