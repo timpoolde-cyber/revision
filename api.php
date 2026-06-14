@@ -33,6 +33,13 @@ try {
         }
     } catch (Throwable $e) {
     }
+
+    foreach (['short_code' => "TEXT", 'notified_at' => "DATETIME"] as $col => $type) {
+        try {
+            $cols = $db->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (!in_array($col, $cols, true)) $db->exec("ALTER TABLE projects ADD COLUMN $col $type");
+        } catch (Throwable $e) { /* still */ }
+    }
 } catch (PDOException $e) {
     error_log("Database connection error: " . $e->getMessage());
     echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);

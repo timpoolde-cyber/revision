@@ -162,6 +162,13 @@ try {
         $db->exec("ALTER TABLE projects ADD COLUMN channel TEXT DEFAULT 'lead'");
     }
 
+    foreach (['short_code' => "TEXT", 'notified_at' => "DATETIME"] as $col => $type) {
+        try {
+            $cols = $db->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (!in_array($col, $cols, true)) $db->exec("ALTER TABLE projects ADD COLUMN $col $type");
+        } catch (Throwable $e) { /* still */ }
+    }
+
     echo "SYSTEM-MELDUNG: Datenbank rockets.db (CRM 2.8) erfolgreich initialisiert und Schema validiert.";
 
 } catch (PDOException $e) {

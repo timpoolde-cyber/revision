@@ -259,6 +259,13 @@ function db_conn(string $path): PDO {
         }
     } catch (Throwable $e) { /* ignore */ }
 
+    foreach (['short_code' => "TEXT", 'notified_at' => "DATETIME"] as $col => $type) {
+        try {
+            $cols = $pdo->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (!in_array($col, $cols, true)) $pdo->exec("ALTER TABLE projects ADD COLUMN $col $type");
+        } catch (Throwable $e) { /* still */ }
+    }
+
     return $pdo;
 }
 
