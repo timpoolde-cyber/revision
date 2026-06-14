@@ -114,8 +114,8 @@
         <div class="modal-form-row">
           <label class="modal-label" for="mChannel">Kanal</label>
           <select class="modal-input" id="mChannel">
-            <option value="lead" selected>Lead</option>
-            <option value="maps">Maps</option>
+            <option value="lead">Lead</option>
+            <option value="maps" selected>Maps</option>
             <option value="vip">VIP</option>
           </select>
         </div>

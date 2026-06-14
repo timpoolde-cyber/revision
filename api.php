@@ -476,7 +476,7 @@ if ($method === 'POST') {
             $cname = $input['customer_name'] ?? '';
             $url = $input['target_url'] ?? '';
             $tunnel = $input['tunnel'] ?? 'anfrage';
-            $channel = $input['channel'] ?? 'lead';
+            $channel = $input['channel'] ?? 'maps';
             $alert_level = $input['alert_level'] ?? 'normal';
             $notiz = $input['notiz'] ?? '';
 
