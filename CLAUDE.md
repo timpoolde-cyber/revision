@@ -1,39 +1,63 @@
-# CLAUDE.md — SYSTEM-ARCHITEKTUR & ENTWICKLUNGS-RICHTLINIEN
+# CLAUDE.md — R400™ CRM · Projektkontext & Leitplanken
 
-## 🚨 EXPRESS-ERLAUBNIS FÜR SICHERHEITS-REFACTORING (2026-06-10)
-- **AUTH & SESSIONS UNLOCKED:** Die Dateien `session_handler.php` und `auth.php` sind explizit für strukturelle Sicherheitsänderungen FREIGEGEBEN. 
-- **BACKDOOR REMOVAL:** Das Entfernen von hartcodierten Passwörtern, Test-Authentifizierungen und globalen Dev-Mode-Bypässen in der Live-Umgebung ist oberste Priorität.
-- **SECRET MANAGEMENT:** Die Migration von Klartext-Secrets (Telegram, Google, SMTP) in eine zentrale `.env`-Struktur und deren Absicherung via `.htaccess` ist ausdrücklich autorisiert und im Scope.
+Diese Datei ist **dauerhafter Kontext + Verhaltensregeln**. Die konkrete Aufgabe steht immer im
+jeweiligen Prompt. Diese Datei gibt nie selbst Aufträge — sie setzt nur Rahmen und Fakten.
 
 ---
 
-## 1. SYSTEM-ARCHITEKTUR & REIHENFOLGE
-Das System wird von historischem Ballast befreit und auf ein professionelles, gehärtetes Produktions-Niveau angehoben.
+## 0. VERHALTEN (wichtigster Teil)
+- **Nur das tun, was im aktuellen Prompt steht.** Keine ungefragten Änderungen, kein
+  „bei der Gelegenheit"-Refactoring, keine eigenmächtigen Verbesserungen außerhalb des Auftrags.
+- Fällt dir außerhalb des Auftrags etwas Kaputtes auf: **benennen, nicht beheben.** Als Notiz ans Ende,
+  nicht als stillen Eingriff.
+- **Bei Unklarheit fragen**, nicht raten. Eine Rückfrage ist billiger als ein falscher Umbau.
+- Diffs minimal und chirurgisch halten. Bestehende Handler/Funktionen ergänzen, nicht ersetzen,
+  außer der Auftrag verlangt es ausdrücklich.
+- Lange Aufträge in der vorgegebenen Reihenfolge abarbeiten und dort stoppen, wo der Prompt es sagt.
+  Nicht vorauseilen.
 
-### Stufe 1: Kritische Härtung (Sofort)
-1. `.env`-Infrastruktur im Web-Root etablieren.
-2. Root-`.htaccess` zum Schutz aller sensiblen Endungen (`.env`, `.db`, `.log`, `.md`) einrichten.
-3. `LOCAL_DEV_MODE` in `session_handler.php` zwingend an `getenv('APP_ENV') === 'local'` koppeln.
-4. Hardcodiertes Passwort in `auth.php` vernichten und komplett auf DB-basiertes `login()` umstellen.
-5. Secrets aus `functions.php` und `config/config.php` extrahieren.
+## 1. HARTE TABUS (nur ändern, wenn der Prompt es EXPLIZIT verlangt)
+- `session_handler.php`, `auth.php`, `check_auth()`, Login- und Stealth-Logik.
+- Die Audit-Logik in `flow/vip/worker_psi.php`.
+- Die Cockpit-Komponente: `r400_status.php`, `r400-status.css`, `r400-status.js` (kanonisch — nur
+  austauschen, wenn ausdrücklich gesagt).
+- DB-Schema: nur die im Prompt genannten Migrationen, sonst nichts.
+- Bestehende PSI-Fetch- und Token-Send-Handler: nur ergänzen, nie entfernen.
 
-### Stufe 2: Datenlecks & Aufräumarbeiten (Folgend)
-1. Debug-Endpunkte (`psi_debug`, `test_psi_api`) aus `api.php` entfernen oder hinter `check_auth()` zwingen.
-2. Rohe Fehlermeldungen (`$e->getMessage()`, Stacktraces) für den Client maskieren; durchgängig `error_log()` nutzen.
-3. Alten, redundanten VIP-Funnel-Ordner `/vip/` inklusive `leads.sqlite` restlos löschen. Nur `/flow/vip/` bleibt aktiv.
-4. Token-Ablaufprüfung (`token_expires`) konsistent in `update.php` und `api_client_update.php` erzwingen.
+## 2. STACK & UMGEBUNG
+- PHP + SQLite (`data/rockets.db`), **kein Composer**, Shared Hosting (One.com).
+- API-Calls per rohem `curl` (kein SDK). PHPMailer liegt lokal bei.
+- Aufbau: Controller im Root (`crm.php`, `project.php`, `mail.php`, `invoice.php`, `edit_data.php`),
+  Templates in `views/`. Globaler Header der Innenseiten: `views/header.tpl.php` (rendert das Cockpit).
+- `crm.php` rendert die Lead-Liste **per JS** (`crm-functions.js`); Innenseiten rendern **per PHP**.
+- Secrets liegen in `.env`; sensible Endungen (`.env`, `.db`, `.log`, `.md`) sind via `.htaccess`
+  geschützt. Das ist Bestand, kein Auftrag.
 
----
+## 3. DESIGN
+- CRM-Innenseiten: monochrom schwarz/weiß, Monospace. Kundenportal (`flow/vip/`): dunkel, Monospace.
+- **Cockpit-Zustände (aktuell, vier + blink):**
+  `grau` #bdbdbd = offen · `schwarz` #111 = läuft · `grün` #16c784 = erledigt/positiv ·
+  `rot` #e5544b = Handlungsbedarf · `faellig` = rot + blinkt (Anruf fällig).
+  Das alte Neon `#00FF66` und das Zwei-Zustands-Schema sind **überholt** — nicht mehr verwenden.
+- HfG-Minimalismus: Funktion vor Dekoration, kein Marketing-Geschwurbel. Texte knapp, Du-Form,
+  im Portal kleingeschrieben.
 
-## 2. DESIGN-SPRINZIP (HfG-STIL)
-- **Radikaler industrialistischer Minimalismus:** Keine dekorativen Elemente, keine Floskeln, kein Marketing-Geschwurbel.
-- **Farbschema:** Dunkel, fokussiert. Signal-Grün (`#00FF66`) exklusiv für aktive Zustände, Grau (`#888`) für inaktive/beendete Prozesse.
-- **Typografie:** Stringenter Fokus auf Monospace-Schriften, Noun-Heavy (substantivlastig), präzise.
+## 4. ARCHITEKTUR (Kurzfassung, damit Kontext nicht verloren geht)
+- **Drei Eingänge, eine Strecke.** Lead (Web-Formular), VIP (Karte → `flow/vip/`), Maps (manuell im +P)
+  laufen auf dieselbe 5-stufige Meilenstein-Strecke: **in · quick · psi · anruf · faktura**.
+- Der Kanal (`lead`/`maps`/`vip`) hängt am **Projekt** (`projects.channel`), nicht am Kunden.
+- **Token vs. Kurz-URL:** Der lange `secret_token` ist der interne Geheimschlüssel (Portal-Auth).
+  Eine Kurz-URL ist die öffentliche Hülle — gebraucht **nur für den Maps-Brief** (gedruckt). VIP/Lead
+  nutzen den langen Token in digitalen Links.
+- **VIP asynchron:** Das Formular legt nur an (`tunnel='anfrage'`) + bestätigt; den Audit macht
+  `worker_psi.php` per Cron (`anfrage` → `bewertet`). Benachrichtigungen über `cron_sms_r400.php`
+  (SMS bevorzugt, Mail als Fallback).
+- **Ein Stopp**, kein Mute: optout → `tunnel='abgeschaltet'` beendet den Prozess (kein Interesse,
+  später reaktivierbar). `cron_sms` überspringt `abgeschaltet`.
 
----
-
-## 3. CODE-KONVENTIONEN
-- **Keine Redundanz:** Funktionen wie `formatPhoneNumber` gehören einmalig zentralisiert in `functions.php`.
-- **Datenbank:** Konsequente Nutzung von PDO mit Prepared Statements zur vollständigen Prävention von SQL-Injections.
-- **Error-Handling:** Keine Fehlerleaks an das Frontend. Fehler stumm in die Server-Logs schreiben, dem Client nur generische Fehlercodes oder Statusmeldungen liefern.
-- **Keine Modifikations-Sperren:** Alle Architekturebenen dürfen zur Erreichung von Code-Sauberkeit und Sicherheit refactored werden.
+## 5. CODE-KONVENTIONEN
+- PDO ausschließlich mit Prepared Statements.
+- **Keine Fehlerleaks ans Frontend:** Exceptions/Stacktraces in `error_log()`, dem Client nur
+  generische Statusmeldungen.
+- Keine Redundanz: gemeinsame Funktionen einmal in `functions.php`.
+- Null-sichere Defaults (`?? ''`, `?? 'lead'` etc.), keine PHP-Notices.

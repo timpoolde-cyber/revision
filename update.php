@@ -12,11 +12,19 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 require_once __DIR__ . '/Logger.php';
+require_once __DIR__ . '/session_handler.php';
 
 $token = $_GET['token'] ?? '';
 
 if (empty($token)) {
     die("Ungültiger Zugangslink.");
+}
+
+// Check if user is authenticated as admin
+$isAdmin = false;
+if (isset($_SESSION['user_id'])) {
+    // Verify admin status from session
+    $isAdmin = isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1;
 }
 
 $dbPath = __DIR__ . '/data/rockets.db';
@@ -49,14 +57,16 @@ if ($tokenExpired) {
 
 Logger::logTokenValidation($data['project_id'] ?? 'unknown', true);
 
-// Register token usage
-$stmt = $db->prepare("UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ?");
-$executeResult = $stmt->execute([$data['id']]);
+// Register token usage only if not accessed by admin
+if (!$isAdmin) {
+    $stmt = $db->prepare("UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ?");
+    $executeResult = $stmt->execute([$data['id']]);
 
-// Log token usage in interactions
-$stmt = $db->prepare("INSERT INTO interactions (project_id, type, content) VALUES (?, 'Token-Verwendung', ?)");
-$time = (new DateTime())->format('H:i');
-$stmt->execute([$data['project_id'], "$time — Kunde hat Token verwendet (Daten aktualisiert)"]);
+    // Log token usage in interactions
+    $stmt = $db->prepare("INSERT INTO interactions (project_id, type, content) VALUES (?, 'Token-Verwendung', ?)");
+    $time = (new DateTime())->format('H:i');
+    $stmt->execute([$data['project_id'], "$time — Kunde hat Token verwendet (Daten aktualisiert)"]);
+}
 
 // Load project contacts
 $stmt = $db->prepare("SELECT * FROM project_contacts WHERE project_id = ? ORDER BY is_default DESC, name ASC");

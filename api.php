@@ -25,6 +25,14 @@ try {
     $db = new PDO('sqlite:' . $dbPath);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     Logger::init($db);
+
+    try {
+        $cols = $db->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('channel', $cols, true)) {
+            $db->exec("ALTER TABLE projects ADD COLUMN channel TEXT DEFAULT 'lead'");
+        }
+    } catch (Throwable $e) {
+    }
 } catch (PDOException $e) {
     error_log("Database connection error: " . $e->getMessage());
     echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
@@ -349,6 +357,7 @@ if ($method === 'GET') {
     if ($action === 'get_leads') {
         $query = "
             SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
+                   p.channel,
                    p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
                    p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
                    c.email, c.phone_mobile,
@@ -381,6 +390,7 @@ if ($method === 'GET') {
             // Fallback to simpler query if psi_results table doesn't exist yet
             $fallbackQuery = "
                 SELECT p.id, p.customer_name, p.target_url, p.tunnel, p.alert_level, p.last_score, p.updated_at,
+                       p.channel,
                        p.phase_1_initiated_at, p.phase_2_evaluated_at, p.phase_3_contacted_at,
                        p.phase_4_engaged_at, p.phase_5_implemented_at, p.phase_6_closed_at,
                        c.email, c.phone_mobile,
@@ -464,17 +474,18 @@ if ($method === 'POST') {
             $cname = $input['customer_name'] ?? '';
             $url = $input['target_url'] ?? '';
             $tunnel = $input['tunnel'] ?? 'anfrage';
+            $channel = $input['channel'] ?? 'lead';
             $alert_level = $input['alert_level'] ?? 'normal';
             $notiz = $input['notiz'] ?? '';
 
             $db->beginTransaction();
 
             if ($id) {
-                $stmt = $db->prepare("UPDATE projects SET customer_id=?, customer_name=?, target_url=?, tunnel=?, alert_level=?, updated_at=CURRENT_TIMESTAMP WHERE id=?");
-                $stmt->execute([$cid, $cname, $url, $tunnel, $alert_level, $id]);
+                $stmt = $db->prepare("UPDATE projects SET customer_id=?, customer_name=?, target_url=?, tunnel=?, channel=?, alert_level=?, updated_at=CURRENT_TIMESTAMP WHERE id=?");
+                $stmt->execute([$cid, $cname, $url, $tunnel, $channel, $alert_level, $id]);
             } else {
-                $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, alert_level, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $stmt->execute([$cid, $cname, $url, $tunnel, $alert_level]);
+                $stmt = $db->prepare("INSERT INTO projects (customer_id, customer_name, target_url, tunnel, channel, alert_level, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                $stmt->execute([$cid, $cname, $url, $tunnel, $channel, $alert_level]);
                 $id = $db->lastInsertId();
             }
 

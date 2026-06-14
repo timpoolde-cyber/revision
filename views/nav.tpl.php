@@ -12,7 +12,7 @@ if ($current_page === 'crm.php') {
 $navProjectId = $currentProjectId ?? ($id ?? ($_GET['id'] ?? null));
 $project_id_param = $navProjectId ? '?id=' . (int)$navProjectId : '';
 ?>
-<div class="sub-nav" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 16px; border-bottom: 1px solid #000; background: #fff; box-sizing: border-box; max-width: 600px; margin-left: auto; margin-right: auto;">
+<div class="sub-nav" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px 14px 16px; border-bottom: 1px solid #000; background: #fff; box-sizing: border-box; max-width: 600px; margin-left: auto; margin-right: auto;">
   <a href="crm.php" class="sub-nav-item" style="display: inline-block; padding: 6px 12px; border: 1px solid #000; font-family: monospace; font-size: 12px; font-weight: 700; text-transform: uppercase; text-decoration: none; color: #000; background: #fff; white-space: nowrap;">
     Leads
   </a>

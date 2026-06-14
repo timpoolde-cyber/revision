@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
   <title>Rechnungs-Zentrale (INV) — <?= htmlspecialchars($project['customer_name']) ?></title>
-  <link rel="stylesheet" href="../style-crm.css">
+  <link rel="stylesheet" href="style-crm.css">
+  <link rel="stylesheet" href="r400-status.css">
   <style>
 
     .container { background: #fff; padding: 0; }

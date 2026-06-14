@@ -50,12 +50,11 @@ require_once dirname(__DIR__, 2) . '/Logger.php';
 
 function db_get_pending_sms(PDO $db): array {
     $stmt = $db->prepare('
-        SELECT p.id, p.secret_token, p.tunnel, p.customer_id, c.phone_mobile, c.email
+        SELECT p.id, p.secret_token, p.tunnel, p.customer_id, c.phone_mobile, c.email, c.customer_name
         FROM projects p
         LEFT JOIN customers c ON p.customer_id = c.id
         WHERE p.tunnel IN (?, ?)
-        AND c.phone_mobile IS NOT NULL
-        AND c.phone_mobile != \'\'
+        AND (c.phone_mobile IS NOT NULL AND c.phone_mobile != \'\' OR c.email IS NOT NULL AND c.email != \'\')
         ORDER BY p.id ASC
     ');
     $stmt->execute(['bewertet', 'bereit']);
@@ -97,7 +96,10 @@ try {
         $pid = (int)$proj['id'];
         $token = $proj['secret_token'] ?? '';
         $phone = $proj['phone_mobile'] ?? '';
+        $email = $proj['email'] ?? '';
+        $name = $proj['customer_name'] ?? '';
         $tunnel = $proj['tunnel'];
+        $mail_from = getenv('MAIL_FROM') ?: 'r400@revision100.de';
 
         // Skip if deactivated
         if ($tunnel === 'abgeschaltet') {
@@ -110,40 +112,84 @@ try {
             $message = "// r400™ // website-revision\n"
                      . "erste ergebnisse liegen vor.\n"
                      . "dein quick report ist live:\n"
-                     . "r400.de/vip/?token=$token";
+                     . "r400.de/vip/?t=$token";
 
-            log_sms("Sending quick report SMS to PID $pid ($phone)");
-            $result = $sipgate->sendSMS($phone, $message);
+            $success = false;
 
-            if ($result['ok']) {
+            if (!empty($phone)) {
+                log_sms("Sending quick report SMS to PID $pid ($phone)");
+                $result = $sipgate->sendSMS($phone, $message);
+                $success = $result['ok'] ?? false;
+                if (!$success) {
+                    log_sms("SMS Send Error (PID $pid): " . ($result['error'] ?? 'Unknown'), 'ERROR');
+                }
+            } else if (!empty($email)) {
+                // B5: Mail fallback wenn kein phone_mobile
+                log_sms("Sending quick report EMAIL to PID $pid ($email)");
+                $subject = 'r400 · quick report ist live';
+                $body = "hallo" . ($name ? ' ' . $name : '') . ",\n\n"
+                      . "deine ersten ergebnisse liegen vor.\n"
+                      . "hier geht's zu deinem quick report:\n"
+                      . "r400.de/vip/?t=$token\n\n"
+                      . "viele grüße\n"
+                      . "r400\n";
+                $headers = 'From: ' . $mail_from . "\r\nContent-Type: text/plain; charset=utf-8\r\n";
+                $success = @mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+                if (!$success) {
+                    log_sms("Mail Send Error (PID $pid): mail() returned false", 'ERROR');
+                }
+            }
+
+            if ($success) {
                 if (db_update_tunnel_status($db, $pid, 'bereit')) {
-                    log_sms("SUCCESS: Quick SMS sent for PID $pid, tunnel→bereit");
+                    $type = !empty($phone) ? 'SMS' : 'EMAIL';
+                    log_sms("SUCCESS: Quick $type sent for PID $pid, tunnel→bereit");
                 } else {
                     log_sms("DB Update failed for PID $pid", 'WARN');
                 }
-            } else {
-                log_sms("SMS Send Error (PID $pid): " . ($result['error'] ?? 'Unknown'), 'ERROR');
             }
         }
 
-        // FALL B: Deep Report (tunnel = 'bereit' but SMS already sent, move to 'kontaktiert')
+        // FALL B: Deep Report (tunnel = 'bereit')
         if ($tunnel === 'bereit') {
             $message = "// r400™ // website-revision\n"
                      . "der vollständige architektonische befund ist fertig.\n"
                      . "abruf im portal:\n"
-                     . "r400.de/vip/?token=$token";
+                     . "r400.de/vip/?t=$token";
 
-            log_sms("Sending deep report SMS to PID $pid ($phone)");
-            $result = $sipgate->sendSMS($phone, $message);
+            $success = false;
 
-            if ($result['ok']) {
+            if (!empty($phone)) {
+                log_sms("Sending deep report SMS to PID $pid ($phone)");
+                $result = $sipgate->sendSMS($phone, $message);
+                $success = $result['ok'] ?? false;
+                if (!$success) {
+                    log_sms("SMS Send Error (PID $pid): " . ($result['error'] ?? 'Unknown'), 'ERROR');
+                }
+            } else if (!empty($email)) {
+                // B5: Mail fallback wenn kein phone_mobile
+                log_sms("Sending deep report EMAIL to PID $pid ($email)");
+                $subject = 'r400 · vollständiger befund ist fertig';
+                $body = "hallo" . ($name ? ' ' . $name : '') . ",\n\n"
+                      . "der vollständige architektonische befund ist jetzt fertig.\n"
+                      . "hier kannst du ihn abrufen:\n"
+                      . "r400.de/vip/?t=$token\n\n"
+                      . "viele grüße\n"
+                      . "r400\n";
+                $headers = 'From: ' . $mail_from . "\r\nContent-Type: text/plain; charset=utf-8\r\n";
+                $success = @mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+                if (!$success) {
+                    log_sms("Mail Send Error (PID $pid): mail() returned false", 'ERROR');
+                }
+            }
+
+            if ($success) {
                 if (db_update_tunnel_status($db, $pid, 'kontaktiert')) {
-                    log_sms("SUCCESS: Deep SMS sent for PID $pid, tunnel→kontaktiert");
+                    $type = !empty($phone) ? 'SMS' : 'EMAIL';
+                    log_sms("SUCCESS: Deep $type sent for PID $pid, tunnel→kontaktiert");
                 } else {
                     log_sms("DB Update failed for PID $pid", 'WARN');
                 }
-            } else {
-                log_sms("SMS Send Error (PID $pid): " . ($result['error'] ?? 'Unknown'), 'ERROR');
             }
         }
     }

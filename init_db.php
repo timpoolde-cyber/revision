@@ -52,6 +52,7 @@ try {
         customer_name TEXT,
         target_url TEXT,
         tunnel TEXT DEFAULT 'anfrage',
+        channel TEXT DEFAULT 'lead',
         alert_level TEXT,
         next_steps TEXT,
         last_score INTEGER,
@@ -154,6 +155,12 @@ try {
     // HINWEIS: Automatisches Seeding deaktiviert.
     // Admin-Benutzer müssen manuell über user_management.php angelegt werden.
     // Dies verhindert unbeabsichtigte Passwort-Resets bei Datenbankinitialisierungen.
+
+    // Idempotente Migration: Kanal-Spalte hinzufügen, falls noch nicht vorhanden
+    $cols = $db->query("PRAGMA table_info(projects)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('channel', $cols, true)) {
+        $db->exec("ALTER TABLE projects ADD COLUMN channel TEXT DEFAULT 'lead'");
+    }
 
     echo "SYSTEM-MELDUNG: Datenbank rockets.db (CRM 2.8) erfolgreich initialisiert und Schema validiert.";
 

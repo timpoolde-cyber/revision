@@ -14,6 +14,9 @@
  *   gruen   = erledigt / positiv bestätigt
  *   rot     = Handlungsbedarf (Zahlung offen)
  *   faellig = Handlungsbedarf, der DICH zwingt (Anruf fällig) → blinkt
+ *
+ * Strich: non-scaling-stroke steckt als Attribut in jedem Symbol, damit der
+ * Strich in jeder Größe gleich dünn bleibt (greift auch durch <use>).
  */
 
 if (!function_exists('r400_status_sprite')) {
@@ -23,12 +26,32 @@ if (!function_exists('r400_status_sprite')) {
         static $printed = false;
         if ($printed) { return; }
         $printed = true;
+        $ns = 'vector-effect="non-scaling-stroke"';
         echo '<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>'
-        . '<symbol id="r4-eingang" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="64" height="98" rx="6"/><line x1="24" y1="30" x2="56" y2="30"/><line x1="24" y1="42" x2="52" y2="42"/><line x1="24" y1="54" x2="56" y2="54"/><path d="M28 76 L37 85 L54 66"/></g></symbol>'
-        . '<symbol id="r4-quick" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="64" height="98" rx="6"/><path d="M46 18 L28 54 L39 54 L34 92 L56 50 L45 50 Z"/></g></symbol>'
-        . '<symbol id="r4-psi" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="64" height="98" rx="6"/><path d="M22 66 A18 18 0 0 1 58 66"/><line x1="40" y1="66" x2="53" y2="48"/><circle cx="40" cy="66" r="3" fill="currentColor" stroke="none"/><line x1="24" y1="78" x2="56" y2="78"/></g></symbol>'
-        . '<symbol id="r4-anruf" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="64" height="98" rx="6"/><g transform="translate(19 21) scale(1.78)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g></g></symbol>'
-        . '<symbol id="r4-faktura" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="64" height="98" rx="6"/><path d="M53 31 C43 27 31 33 31 48 C31 63 43 69 53 65"/><line x1="27" y1="43" x2="49" y2="43"/><line x1="27" y1="53" x2="47" y2="53"/><line x1="27" y1="82" x2="53" y2="82"/></g></symbol>'
+        . '<symbol id="r4-eingang" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+            . '<rect x="8" y="6" width="64" height="98" rx="6" ' . $ns . '/>'
+            . '<line x1="24" y1="30" x2="56" y2="30" ' . $ns . '/>'
+            . '<line x1="24" y1="42" x2="52" y2="42" ' . $ns . '/>'
+            . '<line x1="24" y1="54" x2="56" y2="54" ' . $ns . '/>'
+            . '<path d="M28 76 L37 85 L54 66" ' . $ns . '/></g></symbol>'
+        . '<symbol id="r4-quick" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+            . '<rect x="8" y="6" width="64" height="98" rx="6" ' . $ns . '/>'
+            . '<path d="M46 18 L28 54 L39 54 L34 92 L56 50 L45 50 Z" ' . $ns . '/></g></symbol>'
+        . '<symbol id="r4-psi" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+            . '<rect x="8" y="6" width="64" height="98" rx="6" ' . $ns . '/>'
+            . '<path d="M22 66 A18 18 0 0 1 58 66" ' . $ns . '/>'
+            . '<line x1="40" y1="66" x2="53" y2="48" ' . $ns . '/>'
+            . '<circle cx="40" cy="66" r="3.2" fill="currentColor" stroke="none"/>'
+            . '<line x1="24" y1="78" x2="56" y2="78" ' . $ns . '/></g></symbol>'
+        . '<symbol id="r4-anruf" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+            . '<rect x="8" y="6" width="64" height="98" rx="6" ' . $ns . '/>'
+            . '<g transform="translate(19 21) scale(1.78)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" ' . $ns . '/></g></g></symbol>'
+        . '<symbol id="r4-faktura" viewBox="0 0 80 110"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+            . '<rect x="8" y="6" width="64" height="98" rx="6" ' . $ns . '/>'
+            . '<path d="M53 31 C43 27 31 33 31 48 C31 63 43 69 53 65" ' . $ns . '/>'
+            . '<line x1="27" y1="43" x2="49" y2="43" ' . $ns . '/>'
+            . '<line x1="27" y1="53" x2="47" y2="53" ' . $ns . '/>'
+            . '<line x1="27" y1="82" x2="53" y2="82" ' . $ns . '/></g></symbol>'
         . '</defs></svg>';
     }
 
@@ -105,7 +128,7 @@ if (!function_exists('r400_status_sprite')) {
 
     /** Baut das Cockpit-Markup. $variant: 'header' | 'card'. */
     function r400_status_cockpit(array $states, string $variant = 'header'): string {
-        $labels  = ['eingang' => 'eingang', 'quick' => 'quick', 'psi' => 'psi', 'anruf' => 'anruf', 'faktura' => 'faktura'];
+        $labels  = ['eingang' => 'in', 'quick' => 'quick', 'psi' => 'psi', 'anruf' => 'anruf', 'faktura' => 'faktura'];
         $allowed = ['grau', 'schwarz', 'gruen', 'rot', 'faellig'];
         $v = ($variant === 'card') ? 'card' : 'header';
 
@@ -119,5 +142,14 @@ if (!function_exists('r400_status_sprite')) {
                   . '</span>';
         }
         return $out . '</div>';
+    }
+
+    /** Baut die schwarze Kanal-Badge (LEAD | MAPS | VIP). */
+    function r400_kanal_badge(string $channel = 'lead'): string {
+        $labels = ['lead' => 'LEAD', 'maps' => 'MAPS', 'vip' => 'VIP'];
+        $label = $labels[$channel] ?? 'LEAD';
+        return '<div class="r4-kanal r4-kanal--' . htmlspecialchars($channel, ENT_QUOTES) . '">'
+             . htmlspecialchars($label, ENT_QUOTES)
+             . '</div>';
     }
 }

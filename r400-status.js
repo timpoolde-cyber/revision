@@ -44,19 +44,29 @@
   function r4StatusCockpit(states, variant) {
     states = states || {};
     variant = variant === 'header' ? 'header' : 'card';
+    var labels = { eingang: 'in', quick: 'quick', psi: 'psi', anruf: 'anruf', faktura: 'faktura' };
     var html = '<div class="r4-cockpit r4-cockpit--' + variant + '">';
     for (var i = 0; i < BOXES.length; i++) {
       var key = BOXES[i];
       var st = states[key] || 'grau';
       if (!OK[st]) st = 'grau';
-      html += '<span class="r4ic r4ic--' + st + '" title="' + key + '">'
+      var label = labels[key] || key;
+      html += '<span class="r4ic r4ic--' + st + '" title="' + label + '">'
             + '<svg class="r4ic__icon"><use href="#r4-' + key + '"/></svg>'
-            + '<span class="r4ic__label">' + key + '</span>'
+            + '<span class="r4ic__label">' + label + '</span>'
             + '</span>';
     }
     return html + '</div>';
   }
 
+  function r4KanalBadge(channel) {
+    channel = channel || 'lead';
+    var labels = { lead: 'LEAD', maps: 'MAPS', vip: 'VIP' };
+    var label = labels[channel] || 'LEAD';
+    return '<div class="r4-kanal r4-kanal--' + channel + '">' + label + '</div>';
+  }
+
   window.r4StageStates = r4StageStates;
   window.r4StatusCockpit = r4StatusCockpit;
+  window.r4KanalBadge = r4KanalBadge;
 })();

@@ -48,13 +48,6 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
 
     #sendTokenBtn { background: #000; color: #fff; font-size: 32px; }
 
-    /* VIP-Infobox Styling */
-    .vip-infobox { border: 1px solid #000; padding: 14px; background: #fafafa; margin-bottom: 20px; }
-    .vip-infobox-row { display: flex; gap: 16px; align-items: baseline; margin-bottom: 8px; font-family: var(--font-mono); font-size: 12px; }
-    .vip-infobox-label { font-weight: bold; text-transform: uppercase; color: #000; min-width: 80px; }
-    .vip-infobox-value { color: #00FF66; }
-    .vip-infobox-value.terminated { color: #888; }
-
   </style>
 </head>
 <body>
@@ -68,20 +61,7 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
 <div class="container">
   <div class="content"><div class="section-title">PROJEKT: <?= htmlspecialchars($project['target_url']) ?></div>
 
-    <?php if ($is_vip_channel): ?>
-    <div class="vip-infobox">
-      <div class="vip-infobox-row">
-        <span class="vip-infobox-label">KANAL:</span>
-        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>">VIP-TUNNEL<?php echo $is_terminated ? ' (TERMINATED)' : ''; ?></span>
-      </div>
-      <div class="vip-infobox-row">
-        <span class="vip-infobox-label">STATUS:</span>
-        <span class="vip-infobox-value <?php echo $is_terminated ? 'terminated' : ''; ?>"><?php echo htmlspecialchars($tunnel_display); ?></span>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <div class="action-row" style="display: flex; gap: 24px; margin: 0 0 20px 0; padding: 0;">
+<div class="action-row" style="display: flex; gap: 24px; margin: 0 0 20px 0; padding: 0; align-items: flex-start; flex-wrap: wrap;">
       <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
         <span class="led" id="lhLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
         <button class="action-btn-square lh-square" id="lhSquare" title="Klick für PSI-Messung">
@@ -96,15 +76,13 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
           <span class="btn-icon" style="font-size: 11px; line-height: 1.2; margin-top: 16px; font-weight: normal; font-family: var(--font-mono);">Core</span>
         </button>
       </div>
-    </div>
-
-    <?php if (!empty($project['secret_token'])):
-      $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-      $client_link = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/update.php?token=' . $project['secret_token'];
-    ?>
-      <div style="margin-top: 16px; padding: 12px; border: 1px dashed #000; background: #fafafa; margin-bottom: 24px;">
+      <?php if (!empty($project['secret_token'])):
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $client_link = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/update.php?token=' . $project['secret_token'];
+      ?>
+      <div style="flex: 1; min-width: 200px; padding: 12px; border: 1px dashed #000; background: #fafafa; box-sizing: border-box;">
         <label style="display:block; font-family: var(--font-mono); font-size:11px; text-transform:uppercase; color:#666; margin-bottom:4px;">
-          Externer Kunden-Zugangslink (Token)
+          Externer Zugangslink
         </label>
         <div style="display: flex; gap: 8px; align-items: center;">
           <input type="text" value="<?= htmlspecialchars($client_link) ?>" readonly
@@ -117,7 +95,8 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
           </a>
         </div>
       </div>
-    <?php endif; ?>
+      <?php endif; ?>
+    </div>
 
     <div style="border-top: 1px solid #000; padding-top: 12px;">
       <form id="noteForm" style="margin-bottom: 16px;">
