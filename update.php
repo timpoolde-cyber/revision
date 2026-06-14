@@ -57,8 +57,9 @@ if ($tokenExpired) {
 
 Logger::logTokenValidation($data['project_id'] ?? 'unknown', true);
 
-// Register token usage only if not accessed by admin
-if (!$isAdmin) {
+// Register token usage only if not accessed by admin (Session-Login ODER adm=1-Parameter)
+$admBypass = $isAdmin || (isset($_GET['adm']) && $_GET['adm'] === '1');
+if (!$admBypass) {
     $stmt = $db->prepare("UPDATE customers SET token_used_at = CURRENT_TIMESTAMP WHERE id = ?");
     $executeResult = $stmt->execute([$data['id']]);
 

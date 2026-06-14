@@ -98,33 +98,59 @@ $tunnel_display = $tunnel_labels[$current_tunnel] ?? ucfirst($current_tunnel);
           </div>
         <?php endforeach; ?>
       </div>
-      <div class="action-wrapper" style="position: relative; width: 72px; height: 72px;">
-        <span class="led" id="tokenLed" style="width: 12px; height: 6px; border-radius: 0px !important; display: block; position: absolute; top: -12px; left: 0; z-index: 10; background-color: #bbb !important; box-shadow: inset 0 1px 1px rgba(0,0,0,0.3); transition: all 0.2s; pointer-events: none;"></span>
-        <button class="action-btn-square" id="sendTokenBtn" style="background: #000; padding: 6px;">
-          <span class="btn-label">Token</span>
-          <span class="btn-icon" style="font-size: 11px; line-height: 1.2; margin-top: 16px; font-weight: normal; font-family: var(--font-mono);">Core</span>
-        </button>
-      </div>
-      <?php if (!empty($project['secret_token'])):
+      <?php
+        $channel = $project['channel'] ?? 'lead';
+        $secret_token = $project['secret_token'] ?? '';
+        $short_code = $project['short_code'] ?? '';
+
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-        $client_link = $protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/update.php?token=' . $project['secret_token'];
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $baseDir = rtrim(dirname($_SERVER['PHP_SELF']), '/');
+        $base = $protocol . $host . $baseDir;
+
+        $client_link = '';
+        $needs_shortcode = false;
+        if ($channel === 'maps') {
+            if (!empty($short_code)) {
+                $client_link = 'https://r400.de/m/' . $short_code;
+            } else {
+                $needs_shortcode = true;
+            }
+        } elseif ($channel === 'vip') {
+            if ($secret_token) $client_link = $base . '/flow/vip/?t=' . $secret_token;
+        } else {
+            if ($secret_token) $client_link = $base . '/update.php?token=' . $secret_token;
+        }
+
+        $open_link = '';
+        if ($client_link) {
+            $open_link = $client_link . (strpos($client_link, '?') !== false ? '&' : '?') . 'adm=1';
+        }
       ?>
-      <div style="flex: 1; min-width: 200px; padding: 12px; border: 1px dashed #000; background: #fafafa; box-sizing: border-box;">
+      <div class="token-cluster" style="flex: 1; min-width: 280px; padding: 12px; border: 1px dashed #000; background: #fafafa; box-sizing: border-box;">
         <label style="display:block; font-family: var(--font-mono); font-size:11px; text-transform:uppercase; color:#666; margin-bottom:4px;">
-          Externer Zugangslink
+          Kunden-Link · Kanal: <?= htmlspecialchars($channel) ?>
         </label>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="text" value="<?= htmlspecialchars($client_link) ?>" readonly
-                 onclick="this.select(); document.execCommand('copy'); alert('Link kopiert!');"
-                 style="flex: 1; font-family: var(--font-mono); font-size: 12px; padding: 6px; border: 1px solid #000; background: #fff; cursor: pointer;"
-                 title="Klicken zum Kopieren">
-          <a href="<?= htmlspecialchars($client_link) ?>" target="_blank"
-             style="display: inline-block; padding: 6px 12px; border: 1px solid #000; background: #000; color: #fff; font-family: var(--font-mono); font-size: 12px; text-decoration: none; font-weight: bold;">
-            ÖFFNEN ↗
-          </a>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <?php if ($client_link): ?>
+            <input type="text" id="shareLinkField" value="<?= htmlspecialchars($client_link) ?>" readonly
+                   style="flex: 1; min-width: 160px; font-family: var(--font-mono); font-size: 12px; padding: 6px; border: 1px solid #000; background: #fff; cursor: pointer;"
+                   title="Klicken zum Kopieren">
+            <button type="button" id="openAdmBtn" data-url="<?= htmlspecialchars($open_link) ?>"
+                    style="padding: 6px 12px; border: 1px solid #000; background: #000; color: #fff; font-family: var(--font-mono); font-size: 12px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+              ÖFFNEN (zählt nicht) ↗
+            </button>
+          <?php elseif ($needs_shortcode): ?>
+            <span style="flex: 1; min-width: 160px; font-family: var(--font-mono); font-size: 12px; padding: 6px; border: 1px dashed #999; background: #fff; color: #999;">
+              Short-Code fehlt — erst generieren
+            </span>
+          <?php endif; ?>
+          <button type="button" id="regenTokenBtn"
+                  style="padding: 6px 12px; border: 1px solid #000; background: #fff; color: #000; font-family: var(--font-mono); font-size: 12px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+            <?= $secret_token ? 'Neu generieren' : 'Token generieren' ?>
+          </button>
         </div>
       </div>
-      <?php endif; ?>
     </div>
 
     <div style="border-top: 1px solid #000; padding-top: 12px;">
@@ -186,55 +212,73 @@ function getCurrentTime() {
   return `${now.getDate()}.${now.getMonth() + 1}. ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 
-// Token Handler — Erzeugung ohne E-Mail-Versand
-document.getElementById('sendTokenBtn').addEventListener('click', async (e) => {
-  e.preventDefault();
-  const btn = e.target.closest('button');
-  btn.disabled = true;
-
-  try {
-    const response = await fetch('api.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'generate_token', project_id: <?= $currentProjectId ?> })
-    });
-    const json = await response.json();
-
-    if (json.success && json.token) {
-      const tokenLink = `${window.location.origin}/update.php?token=${json.token}`;
-
-      // Robuster Clipboard-Fallback für unverschlüsselte IP-Aufrufe
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(tokenLink).catch(e => console.error('Clipboard error:', e));
-      } else {
-        // Fallback für Nicht-HTTPS / IP-Umgebungen
-        const textarea = document.createElement('textarea');
-        textarea.value = tokenLink;
-        textarea.style.position = 'fixed'; // Verhindert Scroll-Sprüche
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-        } catch (err) {
-          console.error('Fallback Clipboard error:', err);
-        }
-        document.body.removeChild(textarea);
-      }
-
-      showLED('tokenLed', true);
-      addInteractionNote(<?= $currentProjectId ?>, 'Aktion', getCurrentTime() + ' — Token generiert');
-      setTimeout(() => location.reload(), 1000);
-    } else {
-      showLED('tokenLed', false);
-      addInteractionNote(<?= $currentProjectId ?>, 'Fehler', getCurrentTime() + ' — Token-Generierung fehlgeschlagen');
+// Token-Cluster — Teilen-Feld, Öffnen (zählt nicht), Neu generieren
+(function() {
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => fallback(text));
     }
-  } catch (e) {
-    showLED('tokenLed', false);
-    addInteractionNote(<?= $currentProjectId ?>, 'Fehler', getCurrentTime() + ' — Token Error: ' + e.message);
-  } finally {
-    btn.disabled = false;
+    return Promise.resolve(fallback(text));
+    function fallback(t) {
+      const ta = document.createElement('textarea');
+      ta.value = t;
+      ta.style.position = 'fixed';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    }
   }
-});
+
+  const shareField = document.getElementById('shareLinkField');
+  if (shareField) {
+    shareField.addEventListener('click', () => {
+      shareField.select();
+      copyToClipboard(shareField.value).then(() => {
+        shareField.style.background = '#dff5e1';
+        setTimeout(() => { shareField.style.background = '#fff'; }, 800);
+      });
+    });
+  }
+
+  const openBtn = document.getElementById('openAdmBtn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      const url = openBtn.dataset.url;
+      if (url) window.open(url, '_blank');
+    });
+  }
+
+  const regenBtn = document.getElementById('regenTokenBtn');
+  if (regenBtn) {
+    const hasToken = <?= $secret_token ? 'true' : 'false' ?>;
+    regenBtn.addEventListener('click', async () => {
+      if (hasToken && !confirm('Alter Link wird ungültig. Neuen Token erzeugen?')) return;
+      regenBtn.disabled = true;
+      try {
+        const res = await fetch('api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: hasToken ? 'regenerate_token' : 'generate_token',
+            project_id: <?= $currentProjectId ?>
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          addInteractionNote(<?= $currentProjectId ?>, 'Aktion', getCurrentTime() + (hasToken ? ' — Token neu generiert' : ' — Token generiert'));
+          setTimeout(() => location.reload(), 500);
+        } else {
+          alert('Token-Erzeugung fehlgeschlagen: ' + (json.error || 'unbekannt'));
+          regenBtn.disabled = false;
+        }
+      } catch (err) {
+        alert('Fehler: ' + err.message);
+        regenBtn.disabled = false;
+      }
+    });
+  }
+})();
 
 // DIREKTE GOOGLE-MESSUNG (vier Scores)
 const PSI_SQUARES = ['lhSquare', 'a11ySquare', 'bpSquare', 'seoSquare'];
@@ -340,18 +384,8 @@ document.getElementById('lhSquare').addEventListener('click', async (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('lhLed').classList.remove('green', 'red');
-  document.getElementById('tokenLed').classList.remove('green', 'red');
-
-  const currentPhase = '<?= htmlspecialchars($project['tunnel']) ?>';
-  const lastInteractionDate = '<?= !empty($project['last_interaction_date']) ? htmlspecialchars($project['last_interaction_date']) : '' ?>';
-
-  const lastScore = <?= $project['last_score'] !== null ? $project['last_score'] : 'null' ?>;
-  if (lastScore !== null) {
-    const square = document.getElementById('lhSquare');
-    square.querySelector('.btn-icon').innerText = lastScore;
-    square.className = 'action-btn-square lh-square ' + getLHSquareColor(lastScore);
-  }
+  const lhLed = document.getElementById('lhLed');
+  if (lhLed) lhLed.classList.remove('green', 'red');
 });
 </script>
 </body>

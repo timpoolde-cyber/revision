@@ -645,6 +645,35 @@ if ($method === 'POST') {
         exit;
     }
 
+    if ($action === 'regenerate_token') {
+        try {
+            $projectId = $input['project_id'] ?? null;
+            if (!$projectId) {
+                echo json_encode(['success' => false, 'error' => 'Projekt ID erforderlich']);
+                exit;
+            }
+
+            $stmt = $db->prepare("SELECT c.id FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
+            $stmt->execute([$projectId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$result || !$result['id']) {
+                echo json_encode(['success' => false, 'error' => 'Projekt oder Kunde nicht gefunden']);
+                exit;
+            }
+
+            $customerId = $result['id'];
+            $newToken = generate_secret_token();
+            $stmt = $db->prepare("UPDATE customers SET secret_token = ?, token_created_at = CURRENT_TIMESTAMP, token_used_at = NULL WHERE id = ?");
+            $stmt->execute([$newToken, $customerId]);
+
+            echo json_encode(['success' => true, 'token' => $newToken]);
+        } catch (Exception $e) {
+            error_log($e->getMessage()); echo json_encode(['success' => false, 'error' => 'Integritätsfehler.']);
+        }
+        exit;
+    }
+
     if ($action === 'renew_token') {
         try {
             $token = $input['token'] ?? '';
