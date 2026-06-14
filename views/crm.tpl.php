@@ -99,6 +99,17 @@
         <input class="modal-input" type="text" id="mAddress" placeholder="Straße und Nummer" autocomplete="off">
       </div>
 
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="modal-form-row">
+          <label class="modal-label" for="mCity">Ort</label>
+          <input class="modal-input" type="text" id="mCity" placeholder="Stadt" autocomplete="off">
+        </div>
+        <div class="modal-form-row">
+          <label class="modal-label" for="mPostal">PLZ</label>
+          <input class="modal-input" type="text" id="mPostal" placeholder="Postleitzahl" autocomplete="off">
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
         <div class="modal-form-row">
           <label class="modal-label" for="mTunnel">Phase</label>
@@ -382,6 +393,8 @@ function selectCustomer(customerId) {
       document.getElementById('mEmail').value = customer.email || '';
       document.getElementById('mMobile').value = customer.phone_mobile || '';
       document.getElementById('mAddress').value = customer.address || '';
+      document.getElementById('mCity').value = customer.city || '';
+      document.getElementById('mPostal').value = customer.postal_code || '';
       window.mAddressLat = customer.latitude || null;
       window.mAddressLon = customer.longitude || null;
     }
@@ -389,6 +402,8 @@ function selectCustomer(customerId) {
     document.getElementById('mMobile').value = '';
     document.getElementById('mPhone').value = '';
     document.getElementById('mAddress').value = '';
+    document.getElementById('mCity').value = '';
+    document.getElementById('mPostal').value = '';
     window.mAddressLat = null;
     window.mAddressLon = null;
   }
@@ -423,6 +438,8 @@ async function saveLead() {
       email: document.getElementById('mEmail').value.trim(),
       phone: document.getElementById('mMobile').value.trim(),
       address: document.getElementById('mAddress').value.trim(),
+      city: document.getElementById('mCity').value.trim(),
+      postal_code: document.getElementById('mPostal').value.trim(),
       latitude: window.mAddressLat || null,
       longitude: window.mAddressLon || null
     };
@@ -530,11 +547,14 @@ function initAddressAutocomplete() {
   const wrapper = document.querySelector('gmpx-place-autocomplete[for="mAddress"]');
   if (!wrapper) return;
 
-  wrapper.addEventListener('gmpx-placechange', (e) => {
-    const place = e.detail.place;
-    if (!place || !place.location) return;
-    window.mAddressLat = place.location.lat;
-    window.mAddressLon = place.location.lng;
+  initPlacePicker(wrapper, {
+    company: () => {},
+    street: 'mAddress',
+    city: 'mCity',
+    postal: 'mPostal',
+    website: () => {},
+    lat: (val) => { window.mAddressLat = val; },
+    lon: (val) => { window.mAddressLon = val; }
   });
 }
 
@@ -552,6 +572,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal
 (async () => { await loadLeads(); })();
 </script>
 
+<script src="assets/place-picker.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=<?= getenv('GOOGLE_MAPS_KEY') ?>&libraries=places&loading=async" defer></script>
 <script type="module" src="https://unpkg.com/@googlemaps/extended-component-library"></script>s</body>
 </html>
