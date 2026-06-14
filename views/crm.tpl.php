@@ -548,11 +548,11 @@ function initAddressAutocomplete() {
   if (!wrapper) return;
 
   initPlacePicker(wrapper, {
-    company: () => {},
+    company: 'mFirma',
     street: 'mAddress',
     city: 'mCity',
     postal: 'mPostal',
-    website: () => {},
+    website: 'mUrl',
     lat: (val) => { window.mAddressLat = val; },
     lon: (val) => { window.mAddressLon = val; }
   });
