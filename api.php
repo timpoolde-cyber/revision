@@ -371,8 +371,8 @@ if ($method === 'GET') {
                    (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                    (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                    (SELECT performance_score FROM psi_results WHERE project_id = p.id AND strategy = 'mobile' ORDER BY fetch_timestamp DESC LIMIT 1) as psi_mobile_score,
-                   IFNULL(c.token_created_at, '') as token_created_at,
-                   IFNULL(c.token_used_at, '') as token_used_at,
+                   IFNULL(p.token_created_at, '') as token_created_at,
+                   IFNULL(p.token_used_at, '') as token_used_at,
                    (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name,
                    (SELECT MAX(CASE WHEN report_quick_json IS NOT NULL AND report_quick_json <> '' THEN 1 ELSE 0 END) FROM psi_results WHERE project_id = p.id) AS has_quick,
                    (SELECT MAX(CASE WHEN report_deep IS NOT NULL AND report_deep <> '' THEN 1 ELSE 0 END) FROM psi_results WHERE project_id = p.id) AS has_deep
@@ -404,8 +404,8 @@ if ($method === 'GET') {
                        (SELECT created_at FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_date,
                        (SELECT content FROM interactions i WHERE i.project_id = p.id ORDER BY created_at DESC LIMIT 1) as last_interaction_notes,
                        NULL as psi_mobile_score,
-                       IFNULL(c.token_created_at, '') as token_created_at,
-                       IFNULL(c.token_used_at, '') as token_used_at,
+                       IFNULL(p.token_created_at, '') as token_created_at,
+                       IFNULL(p.token_used_at, '') as token_used_at,
                        (SELECT name FROM project_contacts WHERE project_id = p.id AND is_default = 1 LIMIT 1) as default_contact_name,
                        0 AS has_quick,
                        0 AS has_deep

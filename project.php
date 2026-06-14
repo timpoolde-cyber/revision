@@ -29,7 +29,7 @@ if (!$id) {
 $currentProjectId = (int)$id; // Bereitstellung für die nav.tpl.php
 
 // 5. Projektdaten laden
-$stmt = $db->prepare("SELECT p.*, c.email, c.phone_mobile, c.address, c.city, c.postal_code, c.token_used_at FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
+$stmt = $db->prepare("SELECT p.*, c.email, c.phone_mobile, c.address, c.city, c.postal_code FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
 $stmt->execute([$currentProjectId]);
 $project = $stmt->fetch(PDO::FETCH_ASSOC);
 

@@ -22,7 +22,7 @@ if (!$id) {
     exit;
 }
 
-$stmt = $db->prepare("SELECT p.*, c.email, c.phone_mobile, c.address, c.city, c.postal_code, c.secret_token FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
+$stmt = $db->prepare("SELECT p.*, c.email, c.phone_mobile, c.address, c.city, c.postal_code FROM projects p LEFT JOIN customers c ON p.customer_id = c.id WHERE p.id = ?");
 $stmt->execute([$id]);
 $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
