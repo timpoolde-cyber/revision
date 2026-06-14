@@ -38,10 +38,6 @@ try {
         postal_code TEXT,
         latitude TEXT,
         longitude TEXT,
-        secret_token TEXT,
-        token_expires DATETIME,
-        token_created_at DATETIME DEFAULT NULL,
-        token_used_at DATETIME DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -58,6 +54,9 @@ try {
         last_score INTEGER,
         updated_at DATETIME,
         secret_token TEXT,
+        token_created_at DATETIME DEFAULT NULL,
+        token_used_at DATETIME DEFAULT NULL,
+        token_expires DATETIME,
         budget REAL DEFAULT 0.0,
         phase_1_initiated_at DATETIME,
         phase_2_evaluated_at DATETIME,
